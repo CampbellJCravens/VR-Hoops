@@ -565,8 +565,10 @@ public class PlayAreaManager : MonoBehaviour
         bool shouldSync = false;
         if (forceSync)
         {
-            // During initial sync, only sync if coordinate is not (0,0) OR if PlayArea is in Playing state
-            shouldSync = (coordinate.x != 0 || coordinate.y != 0) || currentGameState == GameState.Playing;
+            // During initial sync, check MODEL's game state, not local state (for late joiners)
+            // Also sync if coordinate is not (0,0) to handle any valid hoop position
+            GameState modelGameState = (GameState)model.gameState;
+            shouldSync = (coordinate.x != 0 || coordinate.y != 0) || modelGameState == GameState.Playing;
         }
         else
         {
@@ -671,23 +673,35 @@ public class PlayAreaManager : MonoBehaviour
             return;
         }
         
-        // If we're trying to set ownership to the local client and the play area is available (unowned),
-        // we need to acquire ownership of the RealtimeView first
+        // If we're trying to set ownership to the local client, we need to acquire ownership of the RealtimeView first
         bool isSettingToLocalClient = clientID == realtime.clientID;
-        bool isAvailable = GetOwner() == -1;
+        bool isAvailable = IsAvailable(); // Use IsAvailable() which handles both 0 and -1
         
         if (debugLogs)
-            Debug.Log($"[PlayAreaManager] SetOwner() - isSettingToLocalClient: {isSettingToLocalClient}, isAvailable: {isAvailable}, realtimeView.isOwnedLocallySelf: {realtimeView.isOwnedLocallySelf}", this);
+            Debug.Log($"[PlayAreaManager] SetOwner() - isSettingToLocalClient: {isSettingToLocalClient}, isAvailable: {isAvailable}, realtimeView.isOwnedLocallySelf: {realtimeView.isOwnedLocallySelf}, currentViewOwner: {realtimeView.ownerIDSelf}", this);
         
-        if (isSettingToLocalClient && isAvailable && !realtimeView.isOwnedLocallySelf)
+        if (isSettingToLocalClient && !realtimeView.isOwnedLocallySelf)
         {
-            // Acquire ownership of the RealtimeView so we can write to the model
-            realtimeView.SetOwnership(realtime.clientID);
-            if (debugLogs)
-                Debug.Log($"[PlayAreaManager] Acquired RealtimeView ownership to set play area owner to local client {clientID}", this);
+            // Try to acquire ownership of the RealtimeView (not the component/model)
+            int currentOwner = realtimeView.ownerIDSelf;
+            if (currentOwner == -1)
+            {
+                // View is unowned, we can directly set ownership of the RealtimeView
+                realtimeView.SetOwnership(realtime.clientID);
+                if (debugLogs)
+                    Debug.Log($"[PlayAreaManager] Set RealtimeView ownership (view was unowned) to local client {clientID}", this);
+            }
+            else
+            {
+                // View is owned by another client, request ownership of the RealtimeView
+                realtimeView.RequestOwnership();
+                if (debugLogs)
+                    Debug.Log($"[PlayAreaManager] Requested RealtimeView ownership (view owned by client {currentOwner}) to set play area owner to local client {clientID}", this);
+            }
         }
         
-        // Now check if we can write to the model (we need to own the RealtimeView)
+        // Try to write to the model if we own the RealtimeView
+        // If we just requested ownership above, this might fail, but EnsureOwnership() will handle it later
         if (realtimeView.isOwnedLocallySelf)
         {
             model.ownerClientID = clientID;
@@ -696,7 +710,7 @@ public class PlayAreaManager : MonoBehaviour
         }
         else if (debugLogs)
         {
-            Debug.LogWarning($"[PlayAreaManager] Cannot set owner - local client does not own RealtimeView (owner: {realtimeView.ownerIDSelf}, local: {realtime.clientID})", this);
+            Debug.LogWarning($"[PlayAreaManager] Cannot set owner immediately - local client does not own RealtimeView yet (owner: {realtimeView.ownerIDSelf}, local: {realtime.clientID}). Ownership transfer may be in progress.", this);
         }
 #endif
     }
@@ -736,6 +750,7 @@ public class PlayAreaManager : MonoBehaviour
     /// <summary>
     /// Ensures ownership of the RealtimeView if the play area is owned by the local client.
     /// This allows the owner to write to the model properties.
+    /// Uses RequestOwnership() to handle cases where another client owns the RealtimeView.
     /// </summary>
     private void EnsureOwnership()
     {
@@ -746,12 +761,27 @@ public class PlayAreaManager : MonoBehaviour
         bool playAreaOwned = IsOwnedByLocalClient();
         bool currentlyOwned = realtimeView.isOwnedLocallySelf;
         
-        Debug.Log($"[PlayAreaManager] EnsureOwnership: PlayArea owned: {playAreaOwned}, RealtimeView owned: {currentlyOwned}, Current owner ID: {realtimeView.ownerIDSelf}, Local client ID: {realtime.clientID}", this);
+        if (debugLogs)
+            Debug.Log($"[PlayAreaManager] EnsureOwnership: PlayArea owned: {playAreaOwned}, RealtimeView owned: {currentlyOwned}, Current owner ID: {realtimeView.ownerIDSelf}, Local client ID: {realtime.clientID}", this);
         
         if (playAreaOwned && !currentlyOwned)
         {
-            realtimeView.SetOwnership(realtime.clientID);
-            Debug.Log($"[PlayAreaManager] Set ownership of RealtimeView to local client {realtime.clientID}. Is owner now: {realtimeView.isOwnedLocallySelf}", this);
+            // Try to acquire ownership of the RealtimeView (not the component/model)
+            int currentOwner = realtimeView.ownerIDSelf;
+            if (currentOwner == -1)
+            {
+                // View is unowned, we can directly set ownership of the RealtimeView
+                realtimeView.SetOwnership(realtime.clientID);
+                if (debugLogs)
+                    Debug.Log($"[PlayAreaManager] Set RealtimeView ownership (view was unowned) for local client {realtime.clientID}", this);
+            }
+            else
+            {
+                // View is owned by another client, request ownership of the RealtimeView
+                realtimeView.RequestOwnership();
+                if (debugLogs)
+                    Debug.Log($"[PlayAreaManager] Requested RealtimeView ownership (view owned by client {currentOwner}) for local client {realtime.clientID}", this);
+            }
         }
 #endif
     }

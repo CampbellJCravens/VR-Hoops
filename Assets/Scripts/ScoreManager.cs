@@ -308,7 +308,7 @@ public class ScoreManager : MonoBehaviour
     /// <summary>
     /// Sets ownership of this ScoreManager's RealtimeView if the PlayArea is owned by the local client.
     /// Called when the game starts to ensure the owner can write to the model.
-    /// Uses SetOwnership() instead of RequestOwnership() for scene-placed views.
+    /// Uses RequestOwnership() to handle cases where another client (like the host) owns the RealtimeView.
     /// </summary>
     private void EnsureOwnership()
     {
@@ -326,10 +326,22 @@ public class ScoreManager : MonoBehaviour
                 
                 if (playAreaOwned && !currentlyOwned && realtimeView != null)
                 {
-                    // Use SetOwnership() for scene-placed views - sets ownership to local client
-                    realtimeView.SetOwnership(realtime.clientID);
-                    if (debugLogs)
-                        Debug.Log($"[ScoreManager] Set ownership of RealtimeView to local client {realtime.clientID}. Is owner now: {realtimeView.isOwnedLocallySelf}", this);
+                    // Try to acquire ownership of the RealtimeView (not the component/model)
+                    int currentOwner = realtimeView.ownerIDSelf;
+                    if (currentOwner == -1)
+                    {
+                        // View is unowned, we can directly set ownership of the RealtimeView
+                        realtimeView.SetOwnership(realtime.clientID);
+                        if (debugLogs)
+                            Debug.Log($"[ScoreManager] Set RealtimeView ownership (view was unowned) for local client {realtime.clientID}", this);
+                    }
+                    else
+                    {
+                        // View is owned by another client, request ownership of the RealtimeView
+                        realtimeView.RequestOwnership();
+                        if (debugLogs)
+                            Debug.Log($"[ScoreManager] Requested RealtimeView ownership (view owned by client {currentOwner}) for local client {realtime.clientID}", this);
+                    }
                 }
                 else if (currentlyOwned)
                 {
