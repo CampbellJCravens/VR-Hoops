@@ -231,7 +231,24 @@ public class HoopScorer : MonoBehaviour
         ScoreManager scoreManager = ScoreManager.FindScoreManagerFor(gameObject);
         if (scoreManager != null)
         {
+#if NORMCORE
+            // Only register score on the client that owns the PlayArea
+            // This prevents double-counting when all clients see the ball pass through the hoop
+            PlayAreaManager playAreaManager = scoreManager.GetPlayAreaManager();
+            if (playAreaManager != null && playAreaManager.IsOwnedByLocalClient())
+            {
+                scoreManager.RegisterScore(hoopRow, isMoneyBall);
+                if (debugLogs)
+                    Debug.Log($"[HoopScorer] RegisterScore called (owner of PlayArea)", this);
+            }
+            else
+            {
+                if (debugLogs)
+                    Debug.Log($"[HoopScorer] RegisterScore skipped (not owner of PlayArea. Owner: {playAreaManager?.GetOwner()}, Local client will receive score via model sync)", this);
+            }
+#else
             scoreManager.RegisterScore(hoopRow, isMoneyBall);
+#endif
         }
         else
         {

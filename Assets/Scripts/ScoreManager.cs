@@ -134,9 +134,10 @@ public class ScoreManager : MonoBehaviour
                 Debug.LogWarning("[ScoreManager] OnRealtimeModelReplaced called but currentModel is null!", this);
         }
         
-        // Subscribe to ownership changes
+        // Subscribe to ownership changes (unsubscribe first to prevent duplicates)
         if (realtimeView != null)
         {
+            realtimeView.ownerIDSelfDidChange -= OnOwnershipChanged; // Unsubscribe first to prevent duplicates
             realtimeView.ownerIDSelfDidChange += OnOwnershipChanged;
         }
         else
@@ -147,31 +148,32 @@ public class ScoreManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Called when ownership of the RealtimeView changes. Retries pending writes if we gained ownership.
+    /// Called when ownership of the RealtimeView changes. Syncs from model when gaining ownership.
+    /// The model is always the source of truth - we sync FROM it, not TO it, to avoid overwriting correct values.
     /// </summary>
     private void OnOwnershipChanged(RealtimeView view, int ownerID)
     {
-        if (debugLogs)
-            Debug.Log($"[ScoreManager] Ownership changed. Is owner now: {view.isOwnedLocallySelf}, Owner ID: {ownerID}", this);
+        // ALWAYS log ownership changes - this is critical for debugging
+        Debug.Log($"[ScoreManager] 🔑 OnOwnershipChanged: Ownership changed. Is owner now: {view.isOwnedLocallySelf}, Owner ID: {ownerID}, ClientID: {realtime?.clientID}", this);
         
-        // If we just gained ownership, sync our local state to the model
         if (view.isOwnedLocallySelf && model != null)
         {
-            // Sync current local state to model (in case we had pending writes)
-            model.score = m_Score;
-            model.lives = m_Lives;
-            model.isOnFire = m_IsOnFire;
-            model.isGameOver = m_IsGameOver;
-            if (debugLogs)
-                Debug.Log($"[ScoreManager] Synced local state to model after gaining ownership: score={m_Score}, lives={m_Lives}", this);
+            Debug.Log($"[ScoreManager] 🔑 OnOwnershipChanged: Gained ownership! Local m_Score BEFORE sync: {m_Score}, model.score: {model.score}", this);
+            // When gaining ownership, always sync FROM model (model is source of truth)
+            // This ensures we have the correct state and don't overwrite model values with stale local state
+            SyncFromModel();
+            Debug.Log($"[ScoreManager] 🔑 OnOwnershipChanged: After SyncFromModel, Local m_Score: {m_Score}, model.score: {model.score}", this);
         }
     }
     
     private void ScoreDidChange(RealtimeScoreModel model, int score)
     {
-        if (debugLogs)
-            Debug.Log($"[ScoreManager] ScoreDidChange callback FIRED! Callback param score: {score}, Model.score: {model.score}, IsOwner: {isOwnedLocallySelf}", this);
+        // ALWAYS log score changes - this is critical for debugging
+        Debug.Log($"[ScoreManager] 🔔 ScoreDidChange callback FIRED! Callback param score: {score}, Model.score: {model.score}, Local m_Score BEFORE sync: {m_Score}, IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}", this);
         SyncFromModel();
+        // Log AFTER sync too
+        if (debugLogs)
+            Debug.Log($"[ScoreManager] ScoreDidChange: After SyncFromModel, Local m_Score: {m_Score}", this);
     }
     
     private void LivesDidChange(RealtimeScoreModel model, int lives)
@@ -226,6 +228,10 @@ public class ScoreManager : MonoBehaviour
         int oldScore = m_Score;
         int oldLives = m_Lives;
         bool oldIsGameOver = m_IsGameOver;
+        
+        // ALWAYS log score sync - this is critical for debugging
+        Debug.Log($"[ScoreManager] 📥 SyncFromModel ENTRY: model.score={model.score}, Local m_Score BEFORE: {m_Score}, IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}", this);
+        
         m_Score = model.score;
         m_Lives = model.lives;
         m_IsOnFire = model.isOnFire;
@@ -237,8 +243,7 @@ public class ScoreManager : MonoBehaviour
         
         if (scoreChanged || livesChanged || gameOverChanged)
         {
-            if (debugLogs)
-                Debug.Log($"[ScoreManager] ✓ CLIENT2 RECEIVED: Model values changed! score: {oldScore}→{m_Score}, lives: {oldLives}→{m_Lives}, isGameOver: {oldIsGameOver}→{m_IsGameOver}, IsOwner: {isOwnedLocallySelf}", this);
+            Debug.Log($"[ScoreManager] ✅ SYNC: Model values changed! score: {oldScore}→{m_Score} (model had {model.score}), lives: {oldLives}→{m_Lives}, isGameOver: {oldIsGameOver}→{m_IsGameOver}, IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}", this);
         }
         else
         {
@@ -411,8 +416,10 @@ public class ScoreManager : MonoBehaviour
         {
             int oldScore = model.score;
             model.score = score;
+            // ALWAYS log score writes - this is critical for debugging
+            Debug.Log($"[ScoreManager] ✍️ WRITE: Wrote score {score} to model (was {oldScore}). Local m_Score: {m_Score}, ClientID: {realtime?.clientID}, Model.score is now: {model.score}", this);
             if (debugLogs)
-                Debug.Log($"[ScoreManager] ✓ CLIENT1 WRITE: Wrote score {score} to model (was {oldScore}). Model should sync to other clients now.", this);
+                Debug.Log($"[ScoreManager] ✓ CLIENT1 WRITE: Model should sync to other clients now.", this);
         }
         else
         {
@@ -758,8 +765,8 @@ public class ScoreManager : MonoBehaviour
     /// <param name="isMoneyBall">Whether this was a money ball (2x multiplier).</param>
     public void RegisterScore(int row, bool isMoneyBall)
     {
-        if (debugLogs)
-            Debug.Log($"[ScoreManager] RegisterScore called! row={row}, isMoneyBall={isMoneyBall}, currentScore={m_Score}, isGameOver={m_IsGameOver}", this);
+        // ALWAYS log RegisterScore - this is critical for debugging
+        Debug.Log($"[ScoreManager] 🎯 RegisterScore CALLED! row={row}, isMoneyBall={isMoneyBall}, currentScore BEFORE: {m_Score}, isGameOver={m_IsGameOver}, IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}", this);
         
         // Don't register scores if game is over
         if (m_IsGameOver)
@@ -798,14 +805,15 @@ public class ScoreManager : MonoBehaviour
             pointsEarned = Mathf.RoundToInt(pointsEarned * onFireMultiplier);
         }
         
+        int scoreBeforeIncrement = m_Score;
         m_Score += pointsEarned;
         m_FlashTimer = flashDuration;
         
+        Debug.Log($"[ScoreManager] RegisterScore: Calculated pointsEarned={pointsEarned}, score: {scoreBeforeIncrement} + {pointsEarned} = {m_Score}", this);
+        
 #if NORMCORE
         // Sync score to model (only if owner)
-        if (debugLogs)
-            if (debugLogs)
-            Debug.Log($"[ScoreManager] RegisterScore: About to call WriteScoreToModel with score={m_Score}", this);
+        Debug.Log($"[ScoreManager] RegisterScore: About to call WriteScoreToModel with score={m_Score}, model.score currently: {model?.score ?? -999}", this);
         WriteScoreToModel(m_Score);
         
         // Sync flash message data to model (only if owner)
@@ -896,6 +904,8 @@ public class ScoreManager : MonoBehaviour
     {
         if (scoreText != null)
         {
+            // ALWAYS log when score display is updated - this is critical for debugging
+            Debug.Log($"[ScoreManager] 🖥️ UpdateScoreDisplay: Setting UI text to 'Score: {m_Score}', IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}, model.score: {model?.score ?? -999}", this);
             scoreText.text = $"Score: {m_Score}";
         }
     }
