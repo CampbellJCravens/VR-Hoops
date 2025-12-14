@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.InputSystem;
 using Unity.XR.CoreUtils;
 #if NORMCORE
 using Normal.Realtime;
@@ -45,6 +46,10 @@ public class PlayAreaManager : MonoBehaviour
     [Tooltip("The HoopPositionsManager for this PlayArea. If not assigned, will search for it in children.")]
     [SerializeField] private HoopPositionsManager hoopPositionsManager;
 
+    [Header("Input")]
+    [Tooltip("Input action for ending the game. If not assigned, will try to find automatically.")]
+    [SerializeField] private InputActionProperty endGameAction;
+
     [Header("Ball Spawning")]
     [Tooltip("The basketball prefab to spawn.")]
     [SerializeField] private GameObject basketballPrefab;
@@ -68,6 +73,12 @@ public class PlayAreaManager : MonoBehaviour
     // Shot counter - increments when a ball hits the ground, never resets
     // Used to determine when to move the hoop (every 3rd shot)
     private int m_ShotCount = 0;
+
+    // Track if we're waiting for game over delay to transition to Pregame
+    private bool m_IsWaitingForGameOverTransition = false;
+    
+    // Track if game over was triggered by EndGame button (vs natural game over)
+    private bool m_GameOverFromEndGameButton = false;
     
     // Track if a money ball is currently in play (blocks spawning until it registers as a shot)
     private bool m_MoneyBallInPlay = false;
@@ -127,10 +138,21 @@ public class PlayAreaManager : MonoBehaviour
             InitializeGameSession();
         }
         
-        // Re-enable movement when transitioning to GameOver
+        // Handle GameOver state transition
         if (newState == GameState.GameOver)
         {
-            OnGameEnded();
+            // Only re-enable movement if game over was triggered by EndGame button
+            // Natural game over (lives = 0) should keep player locked in place
+            if (m_GameOverFromEndGameButton)
+            {
+                OnGameEnded(); // Re-enable movement
+                StartCoroutine(TransitionToPregameAfterDelay(3f));
+            }
+            // For natural game over, don't re-enable movement - player stays locked
+            // ScoreManager's RestartGameAfterDelay will handle restarting to Playing state
+            
+            // Reset flag after handling
+            m_GameOverFromEndGameButton = false;
         }
     }
 
@@ -140,6 +162,20 @@ public class PlayAreaManager : MonoBehaviour
         if (shootingMachine == null)
         {
             shootingMachine = GetComponentInChildren<ShootingMachineLauncher>();
+        }
+
+        // Try to auto-find EndGame input action if not assigned
+        if (endGameAction.action == null)
+        {
+            var actionMap = InputSystem.actions?.FindActionMap("XRI RightHand");
+            if (actionMap != null)
+            {
+                var endGame = actionMap.FindAction("EndGame");
+                if (endGame != null)
+                {
+                    endGameAction = new InputActionProperty(endGame);
+                }
+            }
         }
 
         if (playerShootingPoint == null)
@@ -190,6 +226,24 @@ public class PlayAreaManager : MonoBehaviour
             }
         }
 #endif
+    }
+
+    private void OnEnable()
+    {
+        if (endGameAction.action != null)
+        {
+            endGameAction.action.performed += OnEndGamePressed;
+            endGameAction.action.Enable();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (endGameAction.action != null)
+        {
+            endGameAction.action.performed -= OnEndGamePressed;
+            endGameAction.action.Disable();
+        }
     }
 
     /// <summary>
@@ -1213,6 +1267,64 @@ public class PlayAreaManager : MonoBehaviour
         {
             EnablePlayerMovement();
         }
+    }
+
+    /// <summary>
+    /// Handles the EndGame input action press. Transitions to GameOver state.
+    /// </summary>
+    private void OnEndGamePressed(InputAction.CallbackContext context)
+    {
+        // Only allow ending game if we're currently playing and we own this play area
+        if (currentGameState == GameState.Playing)
+        {
+#if NORMCORE
+            if (IsOwnedByLocalClient())
+            {
+                // Set flag to indicate this is from EndGame button (not natural game over)
+                m_GameOverFromEndGameButton = true;
+                SetGameState(GameState.GameOver);
+            }
+#else
+            // Set flag to indicate this is from EndGame button (not natural game over)
+            m_GameOverFromEndGameButton = true;
+            SetGameState(GameState.GameOver);
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Coroutine that waits for a delay after game over, then transitions to Pregame state
+    /// and clears the owner, making the play area available again.
+    /// </summary>
+    private System.Collections.IEnumerator TransitionToPregameAfterDelay(float delay)
+    {
+        // Prevent multiple coroutines from running
+        if (m_IsWaitingForGameOverTransition)
+            yield break;
+
+        m_IsWaitingForGameOverTransition = true;
+
+        yield return new WaitForSeconds(delay);
+
+        // Only transition if we're still in GameOver state and we own the play area
+        if (currentGameState == GameState.GameOver)
+        {
+#if NORMCORE
+            if (IsOwnedByLocalClient())
+            {
+                // Clear the owner to make play area available
+                SetOwner(-1);
+                
+                // Transition to Pregame state
+                SetGameState(GameState.Pregame);
+            }
+#else
+            // Transition to Pregame state
+            SetGameState(GameState.Pregame);
+#endif
+        }
+
+        m_IsWaitingForGameOverTransition = false;
     }
 }
 

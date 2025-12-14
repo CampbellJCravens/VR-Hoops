@@ -19,9 +19,20 @@ public class ShootingMachineLauncher : MonoBehaviour
     [Tooltip("Multiplier to adjust launch velocity. Higher = faster launch.")]
     [SerializeField] private float velocityMultiplier = 1f;
 
+    [Header("Canvas")]
+    [Tooltip("Reference to the canvas GameObject. Will be hidden after spawning specified number of balls.")]
+    [SerializeField] private GameObject canvas;
+
+    [Header("Canvas Visibility Settings")]
+    [Tooltip("Number of balls to spawn before hiding the canvas.")]
+    [SerializeField] private int hideCanvasAfterBalls = 2;
+
     [Header("Debug")]
     [Tooltip("Enable to draw debug lines showing the launch trajectory.")]
     [SerializeField] private bool drawDebugTrajectory = false;
+
+    private int m_BallsSpawned = 0;
+    private PlayAreaManager m_PlayAreaManager;
 
     /// <summary>
     /// Launches a ball from the launch point towards the target point.
@@ -74,6 +85,16 @@ public class ShootingMachineLauncher : MonoBehaviour
         if (drawDebugTrajectory)
         {
             DrawTrajectory(launchPoint.position, launchVelocity);
+        }
+
+        // Track ball spawn count and hide canvas if threshold reached (only for owner)
+        if (m_PlayAreaManager != null && m_PlayAreaManager.IsOwnedByLocalClient())
+        {
+            m_BallsSpawned++;
+            if (canvas != null && m_BallsSpawned >= hideCanvasAfterBalls)
+            {
+                canvas.SetActive(false);
+            }
         }
     }
 
@@ -146,6 +167,20 @@ public class ShootingMachineLauncher : MonoBehaviour
     private void Awake()
     {
         AutoFindReferences();
+        
+        // Hide canvas by default
+        if (canvas != null)
+        {
+            canvas.SetActive(false);
+        }
+        
+        FindPlayAreaManager();
+        SubscribeToGameStateChanges();
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromGameStateChanges();
     }
 
     private void OnValidate()
@@ -201,6 +236,74 @@ public class ShootingMachineLauncher : MonoBehaviour
                     }
                     parent = parent.parent;
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds the PlayAreaManager in the parent hierarchy.
+    /// </summary>
+    private void FindPlayAreaManager()
+    {
+        m_PlayAreaManager = GetComponentInParent<PlayAreaManager>();
+        if (m_PlayAreaManager == null)
+        {
+            // Try searching up the hierarchy
+            Transform parent = transform.parent;
+            while (parent != null && m_PlayAreaManager == null)
+            {
+                m_PlayAreaManager = parent.GetComponent<PlayAreaManager>();
+                parent = parent.parent;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to game state changes to reset ball count and unhide canvas when game starts.
+    /// </summary>
+    private void SubscribeToGameStateChanges()
+    {
+        if (m_PlayAreaManager != null)
+        {
+            m_PlayAreaManager.GameStateChanged += OnGameStateChanged;
+        }
+    }
+
+    /// <summary>
+    /// Unsubscribes from game state changes.
+    /// </summary>
+    private void UnsubscribeFromGameStateChanges()
+    {
+        if (m_PlayAreaManager != null)
+        {
+            m_PlayAreaManager.GameStateChanged -= OnGameStateChanged;
+        }
+    }
+
+    /// <summary>
+    /// Handles game state changes. Unhides canvas and resets ball count when transitioning to Playing state.
+    /// Only shows canvas for the client that owns this play area.
+    /// </summary>
+    private void OnGameStateChanged(PlayAreaManager.GameState newState)
+    {
+        // Only show/hide canvas for the client that owns this play area
+        if (m_PlayAreaManager == null || !m_PlayAreaManager.IsOwnedByLocalClient())
+        {
+            // This client doesn't own the play area, ensure canvas is hidden
+            if (canvas != null)
+            {
+                canvas.SetActive(false);
+            }
+            return;
+        }
+
+        if (newState == PlayAreaManager.GameState.Playing)
+        {
+            // Reset ball spawn count and unhide canvas when game starts (only for owner)
+            m_BallsSpawned = 0;
+            if (canvas != null)
+            {
+                canvas.SetActive(true);
             }
         }
     }
