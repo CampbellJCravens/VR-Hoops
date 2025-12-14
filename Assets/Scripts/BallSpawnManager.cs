@@ -131,8 +131,8 @@ public class BallSpawnManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gets the PlayArea that is currently in "Playing" state.
-    /// This is the play area where the player started the game.
+    /// Gets the PlayArea that is currently in "Playing" state and owned by the local client.
+    /// This is the play area where the local player started the game.
     /// </summary>
     private PlayAreaManager GetActivePlayArea()
     {
@@ -149,7 +149,26 @@ public class BallSpawnManager : MonoBehaviour
             return null;
         }
 
-        // Find the one that's in Playing state
+#if NORMCORE
+        // In multiplayer, find the PlayArea that is both in Playing state AND owned by the local client
+        // This ensures each client spawns balls in their own PlayArea
+        foreach (var playArea in allPlayAreas)
+        {
+            var state = playArea.GetGameState();
+            bool isOwnedByLocal = playArea.IsOwnedByLocalClient();
+            Debug.Log($"[BallSpawnManager] Checking PlayArea: {playArea.gameObject.name}, State: {state}, IsOwnedByLocal: {isOwnedByLocal}", this);
+            
+            if (state == PlayAreaManager.GameState.Playing && isOwnedByLocal)
+            {
+                Debug.Log($"[BallSpawnManager] Found active PlayArea (owned by local client): {playArea.gameObject.name}", this);
+                return playArea;
+            }
+        }
+        
+        // If no play area is in Playing state and owned by local client, log a warning
+        Debug.LogWarning("[BallSpawnManager] No PlayArea is currently in Playing state and owned by the local client. Make sure you've started a game first (press A at PlayerShootingPoint).", this);
+#else
+        // In single-player, just find the one that's in Playing state
         foreach (var playArea in allPlayAreas)
         {
             var state = playArea.GetGameState();
@@ -164,6 +183,7 @@ public class BallSpawnManager : MonoBehaviour
 
         // If no play area is in Playing state, log a warning
         Debug.LogWarning("[BallSpawnManager] No PlayArea is currently in Playing state. Make sure you've started a game first (press A at PlayerShootingPoint).", this);
+#endif
 
         return null;
     }
