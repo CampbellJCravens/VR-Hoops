@@ -20,12 +20,8 @@ public class ShootingMachineLauncher : MonoBehaviour
     [SerializeField] private float velocityMultiplier = 1f;
 
     [Header("Canvas")]
-    [Tooltip("Reference to the canvas GameObject. Will be hidden after spawning specified number of balls.")]
+    [Tooltip("Reference to the canvas GameObject. Canvas is always visible now.")]
     [SerializeField] private GameObject canvas;
-
-    [Header("Canvas Visibility Settings")]
-    [Tooltip("Number of balls to spawn before hiding the canvas.")]
-    [SerializeField] private int hideCanvasAfterBalls = 2;
 
     [Header("Debug")]
     [Tooltip("Enable to draw debug lines showing the launch trajectory.")]
@@ -33,6 +29,7 @@ public class ShootingMachineLauncher : MonoBehaviour
 
     private int m_BallsSpawned = 0;
     private PlayAreaManager m_PlayAreaManager;
+    private AudioSource m_AudioSource;
 
     /// <summary>
     /// Launches a ball from the launch point towards the target point.
@@ -56,6 +53,22 @@ public class ShootingMachineLauncher : MonoBehaviour
         {
             Debug.LogError("[ShootingMachineLauncher] Target point is not assigned!", this);
             return;
+        }
+
+        // Play ball machine sound effect from SoundManager (3D spatial audio)
+        AudioClip ballMachineSound = SoundManager.GetBallMachine();
+        float ballMachineVolume = SoundManager.GetBallMachineVolume();
+        if (ballMachineSound != null && m_AudioSource != null)
+        {
+            m_AudioSource.PlayOneShot(ballMachineSound, ballMachineVolume);
+        }
+        else if (ballMachineSound == null)
+        {
+            Debug.LogWarning("[ShootingMachineLauncher] BallMachine sound not found in SoundManager!", this);
+        }
+        else if (ballMachineSound != null && m_AudioSource == null)
+        {
+            Debug.LogWarning("[ShootingMachineLauncher] BallMachine sound found but AudioSource is missing!", this);
         }
 
         // Position ball at launch point
@@ -87,14 +100,10 @@ public class ShootingMachineLauncher : MonoBehaviour
             DrawTrajectory(launchPoint.position, launchVelocity);
         }
 
-        // Track ball spawn count and hide canvas if threshold reached (only for owner)
+        // Track ball spawn count (canvas is now always visible)
         if (m_PlayAreaManager != null && m_PlayAreaManager.IsOwnedByLocalClient())
         {
             m_BallsSpawned++;
-            if (canvas != null && m_BallsSpawned >= hideCanvasAfterBalls)
-            {
-                canvas.SetActive(false);
-            }
         }
     }
 
@@ -168,10 +177,20 @@ public class ShootingMachineLauncher : MonoBehaviour
     {
         AutoFindReferences();
         
-        // Hide canvas by default
+        // Canvas is always visible now
         if (canvas != null)
         {
-            canvas.SetActive(false);
+            canvas.SetActive(true);
+        }
+        
+        // Get or add AudioSource component for 3D spatial audio
+        m_AudioSource = GetComponent<AudioSource>();
+        if (m_AudioSource == null)
+        {
+            m_AudioSource = gameObject.AddComponent<AudioSource>();
+            m_AudioSource.playOnAwake = false;
+            m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
+            m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
         }
         
         FindPlayAreaManager();
@@ -281,29 +300,19 @@ public class ShootingMachineLauncher : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles game state changes. Unhides canvas and resets ball count when transitioning to Playing state.
-    /// Only shows canvas for the client that owns this play area.
+    /// Handles game state changes. Resets ball count when transitioning to Playing state.
+    /// Canvas is now always visible.
     /// </summary>
     private void OnGameStateChanged(PlayAreaManager.GameState newState)
     {
-        // Only show/hide canvas for the client that owns this play area
-        if (m_PlayAreaManager == null || !m_PlayAreaManager.IsOwnedByLocalClient())
-        {
-            // This client doesn't own the play area, ensure canvas is hidden
-            if (canvas != null)
-            {
-                canvas.SetActive(false);
-            }
-            return;
-        }
-
+        // Canvas is always visible now - no need to control visibility
+        
         if (newState == PlayAreaManager.GameState.Playing)
         {
-            // Reset ball spawn count and unhide canvas when game starts (only for owner)
-            m_BallsSpawned = 0;
-            if (canvas != null)
+            // Reset ball spawn count when game starts (only for owner)
+            if (m_PlayAreaManager != null && m_PlayAreaManager.IsOwnedByLocalClient())
             {
-                canvas.SetActive(true);
+                m_BallsSpawned = 0;
             }
         }
     }

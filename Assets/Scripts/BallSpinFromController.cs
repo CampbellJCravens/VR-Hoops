@@ -64,6 +64,7 @@ public class BallSpinFromController : MonoBehaviour
     private Rigidbody m_Rigidbody;
     private IXRSelectInteractor m_CurrentInteractor;
     private bool m_IsGrabbed;
+    private AudioSource m_AudioSource;
     
     // Angular velocity sampling
     private struct AngularVelocitySample
@@ -86,6 +87,15 @@ public class BallSpinFromController : MonoBehaviour
     {
         m_GrabInteractable = GetComponent<XRGrabInteractable>();
         m_Rigidbody = GetComponent<Rigidbody>();
+        
+        // Get or add AudioSource component
+        m_AudioSource = GetComponent<AudioSource>();
+        if (m_AudioSource == null)
+        {
+            m_AudioSource = gameObject.AddComponent<AudioSource>();
+            m_AudioSource.playOnAwake = false;
+            m_AudioSource.spatialBlend = 1.0f; // 3D sound
+        }
     }
 
     private void OnEnable()
@@ -189,6 +199,26 @@ public class BallSpinFromController : MonoBehaviour
             return;
             
         m_IsGrabbed = false;
+        
+        // Play ball shot sound effect from SoundManager
+        AudioClip ballShotSound = SoundManager.GetBallShot();
+        float ballShotVolume = SoundManager.GetBallShotVolume();
+        if (ballShotSound != null && m_AudioSource != null)
+        {
+            m_AudioSource.PlayOneShot(ballShotSound, ballShotVolume);
+            if (debug)
+            {
+                Debug.Log($"[BallSpinFromController] Playing ball shot sound effect at volume {ballShotVolume:F2}.", this);
+            }
+        }
+        else if (ballShotSound == null && debug)
+        {
+            Debug.LogWarning("[BallSpinFromController] BallShot sound not found in SoundManager!", this);
+        }
+        else if (ballShotSound != null && m_AudioSource == null)
+        {
+            Debug.LogWarning("[BallSpinFromController] BallShot sound found but AudioSource is missing!", this);
+        }
         
         // Calculate average angular velocity from samples
         Vector3 averageAngularVelocity = CalculateAverageAngularVelocity();

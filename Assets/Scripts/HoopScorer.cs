@@ -15,6 +15,9 @@ public class HoopScorer : MonoBehaviour
     [Tooltip("Maximum time (seconds) allowed for a ball to pass from top to bottom trigger. Allows for balls that spin around the rim.")]
     public float maxSequenceTime = 5.0f;
 
+    [Header("VFX")]
+    [Tooltip("ParticleSystem for money ball burst effect. Should be located at BasketballHoop > Visuals > Net > VFX > MoneyBurst.")]
+    [SerializeField] private ParticleSystem moneyBurstParticleSystem;
 
     [Header("Debug")]
     [Tooltip("Enable to see detailed logging of trigger events and scoring logic.")]
@@ -35,7 +38,87 @@ public class HoopScorer : MonoBehaviour
     }
 
     private Dictionary<GameObject, BallSequence> m_ActiveSequences = new Dictionary<GameObject, BallSequence>();
+    private AudioSource m_AudioSource;
 
+    private void Awake()
+    {
+        // Auto-find MoneyBurst particle system if not assigned
+        if (moneyBurstParticleSystem == null)
+        {
+            // Search in children: Visuals > Net > VFX > MoneyBurst
+            Transform visuals = transform.Find("Visuals");
+            if (visuals != null)
+            {
+                Transform net = visuals.Find("Net");
+                if (net != null)
+                {
+                    Transform vfx = net.Find("VFX");
+                    if (vfx != null)
+                    {
+                        Transform moneyBurst = vfx.Find("MoneyBurst");
+                        if (moneyBurst != null)
+                        {
+                            moneyBurstParticleSystem = moneyBurst.GetComponent<ParticleSystem>();
+                            if (moneyBurstParticleSystem != null && debugLogs)
+                            {
+                                Debug.Log("[HoopScorer] Auto-found MoneyBurst particle system.", this);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If still not found, try searching all children recursively
+            if (moneyBurstParticleSystem == null)
+            {
+                ParticleSystem[] allParticleSystems = GetComponentsInChildren<ParticleSystem>(true);
+                foreach (ParticleSystem ps in allParticleSystems)
+                {
+                    if (ps.gameObject.name == "MoneyBurst")
+                    {
+                        moneyBurstParticleSystem = ps;
+                        if (debugLogs)
+                            Debug.Log($"[HoopScorer] Auto-found MoneyBurst particle system via recursive search: {ps.gameObject.name}", this);
+                        break;
+                    }
+                }
+            }
+
+            if (moneyBurstParticleSystem == null && debugLogs)
+            {
+                Debug.LogWarning("[HoopScorer] MoneyBurst particle system not found. Money ball VFX will not play. Please assign it manually in the Inspector.", this);
+            }
+        }
+
+        // Ensure MoneyBurst particle system doesn't play on awake
+        if (moneyBurstParticleSystem != null)
+        {
+            var main = moneyBurstParticleSystem.main;
+            main.playOnAwake = false;
+            // Stop it if it's already playing
+            if (moneyBurstParticleSystem.isPlaying)
+            {
+                moneyBurstParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+        
+        // Get or add AudioSource component for 3D spatial audio
+        m_AudioSource = GetComponent<AudioSource>();
+        if (m_AudioSource == null)
+        {
+            m_AudioSource = gameObject.AddComponent<AudioSource>();
+            m_AudioSource.playOnAwake = false;
+            m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
+            m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+            m_AudioSource.minDistance = 1f;
+            m_AudioSource.maxDistance = 50f;
+        }
+        
+        if (debugLogs)
+        {
+            Debug.Log($"[HoopScorer] AudioSource initialized. Spatial Blend: {m_AudioSource.spatialBlend}, Rolloff: {m_AudioSource.rolloffMode}, Min Distance: {m_AudioSource.minDistance}, Max Distance: {m_AudioSource.maxDistance}", this);
+        }
+    }
 
     public void OnBallTriggerEnter(HoopTrigger.HoopTriggerPart part, Collider other)
     {
@@ -206,6 +289,45 @@ public class HoopScorer : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[HoopScorer] 🏀 SCORE! Ball: {ball.name}", this);
 
+        // Play swish sound effect from SoundManager (3D spatial audio from the hoop)
+        AudioClip swishSound = SoundManager.GetSwish();
+        float swishVolume = SoundManager.GetSwishVolume();
+        
+        if (debugLogs)
+        {
+            Debug.Log($"[HoopScorer] Attempting to play swish sound. Sound: {(swishSound != null ? swishSound.name : "NULL")}, Volume: {swishVolume:F2}, AudioSource: {(m_AudioSource != null ? "EXISTS" : "NULL")}", this);
+        }
+        
+        if (swishSound != null && m_AudioSource != null)
+        {
+            // Ensure AudioSource is enabled and GameObject is active
+            if (!m_AudioSource.enabled)
+            {
+                Debug.LogWarning("[HoopScorer] AudioSource is disabled! Enabling it now.", this);
+                m_AudioSource.enabled = true;
+            }
+            
+            if (!gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning("[HoopScorer] HoopScorer GameObject is not active in hierarchy! Sound may not play.", this);
+            }
+            
+            m_AudioSource.PlayOneShot(swishSound, swishVolume);
+            
+            if (debugLogs)
+            {
+                Debug.Log($"[HoopScorer] ✅ PlayOneShot called! Sound: {swishSound.name}, Volume: {swishVolume:F2}, AudioSource enabled: {m_AudioSource.enabled}, GameObject active: {gameObject.activeInHierarchy}", this);
+            }
+        }
+        else if (swishSound == null)
+        {
+            Debug.LogWarning("[HoopScorer] ❌ Swish sound not found in SoundManager! Make sure SoundManager exists in scene and has Swish audio clip assigned.", this);
+        }
+        else if (swishSound != null && m_AudioSource == null)
+        {
+            Debug.LogError("[HoopScorer] ❌ Swish sound found but AudioSource is missing! This should not happen - AudioSource should be created in Awake().", this);
+        }
+
         // Mark ball as scored
         BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
         if (tracker != null)
@@ -225,6 +347,19 @@ public class HoopScorer : MonoBehaviour
         if (visualController != null)
         {
             isMoneyBall = visualController.IsMoneyBall();
+        }
+
+        // Play money burst VFX if this is a money ball
+        if (isMoneyBall && moneyBurstParticleSystem != null)
+        {
+            moneyBurstParticleSystem.Play();
+            if (debugLogs)
+                Debug.Log("[HoopScorer] 💰 Money ball scored! Playing MoneyBurst particle effect.", this);
+        }
+        else if (isMoneyBall && moneyBurstParticleSystem == null)
+        {
+            if (debugLogs)
+                Debug.LogWarning("[HoopScorer] Money ball scored but MoneyBurst particle system is not assigned!", this);
         }
 
         // Update score manager (find through PlayArea hierarchy)

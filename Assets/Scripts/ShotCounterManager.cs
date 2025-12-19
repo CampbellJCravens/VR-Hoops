@@ -177,13 +177,8 @@ public class ShotCounterManager : MonoBehaviour
         BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
         bool ballScored = tracker != null && tracker.HasScored();
         
-        // Only stop VFX if the ball did NOT score
-        // If the ball scored, let the VFX continue until the ball is destroyed
-        if (!ballScored)
-        {
-            // Immediately stop all VFX on the ball when it hits the ground (missed shot)
-            StopAllVFXOnBall(ball);
-        }
+        // VFX is now managed by OnFireVFXTrigger based on fire state - don't stop it here
+        // The VFX will automatically stop when fire state is deactivated
         
         if (tracker != null && tracker.ShouldLoseLife())
         {
@@ -269,8 +264,8 @@ public class ShotCounterManager : MonoBehaviour
         
         if (ball != null)
         {
-            // Stop all VFX on the ball before destroying it (clean cleanup)
-            StopAllVFXOnBall(ball);
+            // VFX cleanup is handled automatically by OnFireVFXTrigger when fire state changes
+            // No need to manually stop VFX here
             
             // Remove from counted set before destroying
             m_CountedBalls.Remove(ball);
@@ -300,23 +295,7 @@ public class ShotCounterManager : MonoBehaviour
         return 0;
     }
 
-    /// <summary>
-    /// Stops all VFX (OnFireVFXTrigger components) on the ball immediately.
-    /// </summary>
-    private void StopAllVFXOnBall(GameObject ball)
-    {
-        if (ball == null)
-            return;
-
-        // Find all OnFireVFXTrigger components on the ball and its children
-        OnFireVFXTrigger[] vfxTriggers = ball.GetComponentsInChildren<OnFireVFXTrigger>();
-        
-        foreach (OnFireVFXTrigger vfxTrigger in vfxTriggers)
-        {
-            // Stop the VFX immediately using the public method
-            vfxTrigger.StopVFX();
-            Debug.Log($"[ShotCounterManager] Stopped VFX on ball {ball.name}", this);
-        }
-    }
+    // Removed StopAllVFXOnBall method - VFX is now managed entirely by OnFireVFXTrigger
+    // based on the fire state. The VFX will automatically start/stop when fire state changes.
 }
 

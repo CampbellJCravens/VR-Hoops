@@ -452,6 +452,31 @@ public class PlayAreaManager : MonoBehaviour
             Debug.Log("[PlayAreaManager] Money ball spawned! Spawning is now blocked until it registers as a shot.", this);
         }
 
+        // Initialize fire VFX on the ball if we're currently on fire
+        // This ensures the VFX is properly set up even if there are timing issues with component initialization
+        OnFireVFXTrigger[] vfxTriggers = newBall.GetComponentsInChildren<OnFireVFXTrigger>();
+        foreach (OnFireVFXTrigger vfxTrigger in vfxTriggers)
+        {
+            if (vfxTrigger != null)
+            {
+                // Force initialization of VFX state
+                vfxTrigger.InitializeVFX();
+                Debug.Log($"[PlayAreaManager] Initialized fire VFX on ball: {newBall.name}", this);
+            }
+        }
+        
+        // Initialize fire sound on the ball if we're currently on fire
+        BallFireSound[] fireSounds = newBall.GetComponentsInChildren<BallFireSound>();
+        foreach (BallFireSound fireSound in fireSounds)
+        {
+            if (fireSound != null)
+            {
+                // Force initialization of fire sound state
+                fireSound.InitializeFireSound();
+                Debug.Log($"[PlayAreaManager] Initialized fire sound on ball: {newBall.name}", this);
+            }
+        }
+
         // Launch the ball
         Debug.Log($"[PlayAreaManager] Launching ball from ShootingMachine...", this);
         shootingMachine.LaunchBall(newBall);
