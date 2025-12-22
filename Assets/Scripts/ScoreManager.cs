@@ -858,6 +858,54 @@ public class ScoreManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Called when a shot is missed (ball hits ground but didn't score).
+    /// Resets the consecutive scores counter and deactivates fire state if active.
+    /// Does not lose a life.
+    /// This should be called whenever a ball hits the ground without scoring, regardless of whether it hit the rim.
+    /// </summary>
+    public void RegisterMiss()
+    {
+        if (m_IsGameOver)
+        {
+            if (debugLogs)
+                Debug.Log("[ScoreManager] RegisterMiss ignored - game is over", this);
+            return;
+        }
+
+        // Reset consecutive scores and On Fire state when a shot is missed
+        bool wasOnFire = m_IsOnFire;
+        int oldConsecutiveScores = m_ConsecutiveScores;
+        
+        if (m_ConsecutiveScores > 0 || m_IsOnFire)
+        {
+            m_ConsecutiveScores = 0;
+            
+            // Deactivate fire state if it was active
+            if (m_IsOnFire)
+            {
+                m_IsOnFire = false;
+                
+#if NORMCORE
+                // Sync on fire state to model if it changed (only if owner)
+                WriteOnFireToModel(false);
+#endif
+                
+                // Notify VFX systems immediately if On Fire was deactivated
+                OnFireStateChanged?.Invoke(false);
+                Debug.Log($"[ScoreManager] 🔥 ON FIRE DEACTIVATED (Shot Missed)! Consecutive scores reset: {oldConsecutiveScores} → 0", this);
+            }
+            else
+            {
+                Debug.Log($"[ScoreManager] Shot missed! Resetting consecutive scores: {oldConsecutiveScores} → 0", this);
+            }
+        }
+        else if (debugLogs)
+        {
+            Debug.Log("[ScoreManager] RegisterMiss called but consecutive scores already at 0 and not on fire.", this);
+        }
+    }
+
+    /// <summary>
     /// Called when a life should be lost.
     /// </summary>
     public void LoseLife()

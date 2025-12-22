@@ -177,13 +177,30 @@ public class ShotCounterManager : MonoBehaviour
         BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
         bool ballScored = tracker != null && tracker.HasScored();
         
+        // Find ScoreManager (used for both miss registration and life loss)
+        ScoreManager scoreManager = ScoreManager.FindScoreManagerFor(gameObject);
+        
+        // Register a miss if the ball didn't score (resets consecutive scores counter)
+        // This should happen for ALL missed shots, regardless of whether a life is lost
+        if (!ballScored)
+        {
+            if (scoreManager != null)
+            {
+                scoreManager.RegisterMiss();
+                Debug.Log($"[ShotCounterManager] Shot missed! Registered miss with ScoreManager. Ball: {ball.name}", this);
+            }
+            else
+            {
+                Debug.LogWarning($"[ShotCounterManager] Could not find ScoreManager for {gameObject.name}. Miss will not be registered.", this);
+            }
+        }
+        
         // VFX is now managed by OnFireVFXTrigger based on fire state - don't stop it here
         // The VFX will automatically stop when fire state is deactivated
         
+        // Check if a life should be lost (complete miss: no score AND no rim hit)
         if (tracker != null && tracker.ShouldLoseLife())
         {
-            // Lose a life (find ScoreManager through PlayArea hierarchy)
-            ScoreManager scoreManager = ScoreManager.FindScoreManagerFor(gameObject);
             if (scoreManager != null)
             {
                 scoreManager.LoseLife();
