@@ -651,7 +651,7 @@ MonoBehaviour:
   basketballPrefab: {fileID: 7051872549721023133, guid: 4df4d20338be4b347bf0b04decb3280f, type: 3}
   currentGameState: 0
   disableMovementDuringGameplay: 1
-  debugLogs: 1
+  debugLogs: 0
 --- !u!114 &117661162750089268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3887,6 +3887,10 @@ MonoBehaviour:
   fireText: {fileID: 0}
   modifierPos1: {fileID: 0}
   modifierPos2: {fileID: 0}
+  lifeChangedUIGameObject: {fileID: 0}
+  airBallText: {fileID: 0}
+  lifeHeartAnimator: {fileID: 0}
+  lifeHeartUI: {fileID: 0}
   startingLives: 5
   moneyBallMultiplier: 2
   consecutiveScoresForOnFire: 3
@@ -5724,6 +5728,10 @@ PrefabInstance:
     - target: {fileID: 8440177211894470933, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_Name
       value: BasketballHoop
+      objectReference: {fileID: 0}
+    - target: {fileID: 8443958228262072854, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
+      propertyPath: debugLogs
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8705649861602657093, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_LocalPosition.x

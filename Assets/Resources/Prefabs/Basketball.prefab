@@ -10286,4 +10286,4 @@ MonoBehaviour:
   isOneShot: 0
   loopWhileOnFire: 1
   stopWhenOffFire: 1
-  debugLogs: 1
+  debugLogs: 0

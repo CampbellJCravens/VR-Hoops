@@ -875,7 +875,7 @@
                 {
                     "name": "",
                     "id": "86119ccb-e817-4b98-b895-3fcedf3b68d8",
-                    "path": "*/{SecondaryButton}",
+                    "path": "<XRController>/{TriggerButton}",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -1584,6 +1584,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "EndGame",
+                    "type": "Button",
+                    "id": "11fe0eea-3637-45c2-8661-dc10363589ed",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1997,7 +2006,7 @@
                 {
                     "name": "",
                     "id": "6c3350d9-d7fd-4c1b-b61b-99cc3a4dfa3e",
-                    "path": "*/{SecondaryButton}",
+                    "path": "<XRController>/{TriggerButton}",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -2013,6 +2022,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "StartGame",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d9f0ba90-1b82-4228-9785-0f5ff679ca34",
+                    "path": "*/{SecondaryButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EndGame",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -2616,7 +2636,7 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "448b396b-0885-4543-ac5a-8b3405da6791",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
