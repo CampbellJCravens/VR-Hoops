@@ -63,7 +63,8 @@ public class RimCollisionTracker : MonoBehaviour
                     // Multiply by the configured rim hit volume from SoundManager
                     float finalVolume = velocityBasedVolume * rimHitVolume;
                     
-                    m_AudioSource.PlayOneShot(rimHitSound, finalVolume);
+                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
+                    m_AudioSource.PlayOneShot(rimHitSound, effectiveVolume);
                     m_LastRimHitTime = Time.time;
                     
                     if (debugLogs)

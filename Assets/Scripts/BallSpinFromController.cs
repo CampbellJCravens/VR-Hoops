@@ -10,8 +10,9 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 /// BallSpinFromController - Controller-driven ball spin system for VR basketball
 /// 
 /// This script samples the controller/hand's angular velocity while the ball is grabbed,
-/// and applies that spin to the ball when released. This creates realistic ball rotation
-/// based on wrist motion during the shooting motion.
+/// and applies that spin to the ball when released. The spin is optimized to prioritize
+/// backspin (rotation around horizontal axis perpendicular to throw direction) and reduce
+/// unwanted side spin.
 /// 
 /// TUNING GUIDE:
 /// - spinMultiplier: How much controller rotation affects ball spin (1.0 = 1:1, 2.0 = double)
@@ -25,6 +26,14 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 /// 
 /// - sampleWindowSeconds: How many seconds of angular velocity history to average
 ///   Longer = smoother but less responsive. Start with 0.15 seconds (150ms)
+/// 
+/// - backspinPriority: How much to prioritize backspin (0.0-1.0)
+///   1.0 = pure backspin only, 0.0 = use all spin components equally
+///   Recommended: 0.7-0.9 for realistic basketball shots
+/// 
+/// - sideSpinReduction: How much to reduce unwanted side spin (0.0-1.0)
+///   1.0 = completely remove side spin, 0.0 = keep all side spin
+///   Recommended: 0.5-0.8 to reduce side spin while maintaining some natural feel
 /// 
 /// XR INPUTS USED:
 /// - For controllers: InputDevice.TryGetFeatureValue(CommonUsages.deviceAngularVelocity)
@@ -54,6 +63,15 @@ public class BallSpinFromController : MonoBehaviour
     
     [Tooltip("How many seconds of angular velocity history to average before release.")]
     [SerializeField] private float sampleWindowSeconds = 0.15f;
+    
+    [Header("Backspin Settings")]
+    [Tooltip("How much to prioritize backspin over side spin. 1.0 = pure backspin, 0.0 = use all spin components.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float backspinPriority = 0.8f;
+    
+    [Tooltip("How much to reduce side spin. 1.0 = no side spin, 0.0 = full side spin.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float sideSpinReduction = 0.7f;
     
     [Header("Debug")]
     [Tooltip("Enable to log spin values and draw debug lines showing spin axis.")]
@@ -94,7 +112,10 @@ public class BallSpinFromController : MonoBehaviour
         {
             m_AudioSource = gameObject.AddComponent<AudioSource>();
             m_AudioSource.playOnAwake = false;
-            m_AudioSource.spatialBlend = 1.0f; // 3D sound
+            m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
+            m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+            m_AudioSource.minDistance = 1f;
+            m_AudioSource.maxDistance = 50f;
         }
     }
 
@@ -205,7 +226,8 @@ public class BallSpinFromController : MonoBehaviour
         float ballShotVolume = SoundManager.GetBallShotVolume();
         if (ballShotSound != null && m_AudioSource != null)
         {
-            m_AudioSource.PlayOneShot(ballShotSound, ballShotVolume);
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, ballShotVolume);
+            m_AudioSource.PlayOneShot(ballShotSound, effectiveVolume);
             if (debug)
             {
                 Debug.Log($"[BallSpinFromController] Playing ball shot sound effect at volume {ballShotVolume:F2}.", this);
@@ -231,7 +253,10 @@ public class BallSpinFromController : MonoBehaviour
         if (releaseSpeed >= minReleaseSpeed)
         {
             // Apply spin multiplier
-            Vector3 finalAngularVelocity = averageAngularVelocity * spinMultiplier;
+            Vector3 rawAngularVelocity = averageAngularVelocity * spinMultiplier;
+            
+            // Calculate backspin-optimized angular velocity
+            Vector3 finalAngularVelocity = CalculateBackspinOptimizedSpin(rawAngularVelocity, releaseVelocity);
             
             // Clamp to max spin
             if (finalAngularVelocity.magnitude > maxSpin)
@@ -250,7 +275,10 @@ public class BallSpinFromController : MonoBehaviour
             
             if (debug)
             {
+                Vector3 backspinComponent = GetBackspinComponent(rawAngularVelocity, releaseVelocity);
+                Vector3 sideSpinComponent = rawAngularVelocity - backspinComponent;
                 Debug.Log($"[BallSpinFromController] Released with spin: {finalAngularVelocity} (magnitude: {finalAngularVelocity.magnitude:F2} rad/s, release speed: {releaseSpeed:F2} m/s)");
+                Debug.Log($"[BallSpinFromController] Backspin component: {backspinComponent.magnitude:F2} rad/s, Side spin component: {sideSpinComponent.magnitude:F2} rad/s");
             }
         }
         else
@@ -353,6 +381,84 @@ public class BallSpinFromController : MonoBehaviour
         }
         
         return sum / m_AngularVelocitySamples.Count;
+    }
+    
+    /// <summary>
+    /// Calculates the backspin component of angular velocity.
+    /// Backspin is rotation around a horizontal axis perpendicular to the ball's velocity direction.
+    /// </summary>
+    private Vector3 GetBackspinComponent(Vector3 angularVelocity, Vector3 velocity)
+    {
+        if (velocity.magnitude < 0.01f)
+            return Vector3.zero; // Can't determine backspin axis without velocity
+        
+        // Normalize velocity to get direction
+        Vector3 velocityDir = velocity.normalized;
+        
+        // Calculate horizontal direction (project velocity onto horizontal plane)
+        Vector3 horizontalVelocity = new Vector3(velocityDir.x, 0f, velocityDir.z);
+        if (horizontalVelocity.magnitude < 0.01f)
+        {
+            // Ball is moving straight up/down, use default horizontal axis
+            horizontalVelocity = Vector3.forward;
+        }
+        horizontalVelocity.Normalize();
+        
+        // Backspin axis is horizontal and perpendicular to the horizontal velocity direction
+        // This creates rotation that makes the ball spin backward (backspin)
+        Vector3 backspinAxis = Vector3.Cross(Vector3.up, horizontalVelocity).normalized;
+        
+        // Project angular velocity onto the backspin axis
+        float backspinMagnitude = Vector3.Dot(angularVelocity, backspinAxis);
+        Vector3 backspinComponent = backspinAxis * backspinMagnitude;
+        
+        return backspinComponent;
+    }
+    
+    /// <summary>
+    /// Calculates the side spin component of angular velocity.
+    /// Side spin is everything that's not backspin (rotation around velocity direction or vertical axis).
+    /// </summary>
+    private Vector3 GetSideSpinComponent(Vector3 angularVelocity, Vector3 velocity)
+    {
+        // Side spin is simply the angular velocity minus the backspin component
+        Vector3 backspinComponent = GetBackspinComponent(angularVelocity, velocity);
+        return angularVelocity - backspinComponent;
+    }
+    
+    /// <summary>
+    /// Optimizes the angular velocity to prioritize backspin and reduce side spin.
+    /// </summary>
+    private Vector3 CalculateBackspinOptimizedSpin(Vector3 rawAngularVelocity, Vector3 velocity)
+    {
+        if (rawAngularVelocity.magnitude < 0.01f)
+            return Vector3.zero;
+        
+        // Separate backspin and side spin components
+        Vector3 backspinComponent = GetBackspinComponent(rawAngularVelocity, velocity);
+        Vector3 sideSpinComponent = GetSideSpinComponent(rawAngularVelocity, velocity);
+        
+        // Reduce side spin
+        Vector3 reducedSideSpin = sideSpinComponent * (1f - sideSpinReduction);
+        
+        // Blend backspin and reduced side spin based on priority
+        // Higher backspinPriority means more backspin, less side spin
+        Vector3 optimizedSpin = backspinComponent * backspinPriority + reducedSideSpin * (1f - backspinPriority);
+        
+        // Preserve the overall spin magnitude to maintain feel
+        // But adjust the direction to favor backspin
+        float originalMagnitude = rawAngularVelocity.magnitude;
+        if (optimizedSpin.magnitude > 0.01f)
+        {
+            optimizedSpin = optimizedSpin.normalized * originalMagnitude;
+        }
+        else
+        {
+            // If optimization removed all spin, use original but scaled down
+            optimizedSpin = rawAngularVelocity * 0.5f;
+        }
+        
+        return optimizedSpin;
     }
     
 

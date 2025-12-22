@@ -106,6 +106,10 @@ public class SoundManager : MonoBehaviour
     
     [Tooltip("Enable 3D spatial audio for background music. If disabled, music will play as 2D (non-spatial) sound.")]
     public bool useSpatialAudioForMusic = true;
+    
+    [Header("Debug")]
+    [Tooltip("When enabled, mutes all sound effects that originate from within a PlayArea owned by the local client. Useful for testing spatial audio from other clients' play areas.")]
+    public bool muteInPlayArea = false;
 
     private AudioSource m_BackgroundMusicSource;
     private int m_CurrentTrackIndex = 0;
@@ -384,6 +388,110 @@ public class SoundManager : MonoBehaviour
             m_BackgroundMusicSource.Stop();
         }
         PlayNextTrack();
+    }
+
+    /// <summary>
+    /// Checks if a position is within a PlayArea owned by the local client.
+    /// </summary>
+    /// <param name="position">The world position to check.</param>
+    /// <returns>True if the position is within a local client's PlayArea, false otherwise.</returns>
+    private static bool IsPositionInLocalPlayArea(Vector3 position)
+    {
+        if (Instance == null)
+            return false;
+        
+        // Find all PlayAreaManagers in the scene
+        PlayAreaManager[] allPlayAreas = FindObjectsByType<PlayAreaManager>(FindObjectsSortMode.None);
+        
+        foreach (PlayAreaManager playArea in allPlayAreas)
+        {
+            if (playArea == null)
+                continue;
+            
+            // Check if this PlayArea is owned by the local client
+            if (!playArea.IsOwnedByLocalClient())
+                continue;
+            
+            // Check if the position is within this PlayArea's bounds
+            // We'll use a simple distance check from the PlayArea's center
+            // For more accurate bounds checking, you could use a Collider or Bounds
+            float distance = Vector3.Distance(position, playArea.transform.position);
+            
+            // Use a reasonable radius (adjust based on your PlayArea size)
+            // Most PlayAreas are probably within 10-20 units
+            if (distance < 25f) // Adjust this value based on your PlayArea size
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Gets the effective volume for a sound at a given position, accounting for mute settings.
+    /// </summary>
+    /// <param name="position">The world position where the sound will play.</param>
+    /// <param name="requestedVolume">The requested volume.</param>
+    /// <returns>The effective volume (0 if muted, otherwise the requested volume).</returns>
+    public static float GetEffectiveVolume(Vector3 position, float requestedVolume)
+    {
+        if (Instance == null)
+            return requestedVolume;
+        
+        // If mute in play area is enabled and position is in local play area, mute the sound
+        if (Instance.muteInPlayArea && IsPositionInLocalPlayArea(position))
+        {
+            return 0f;
+        }
+        
+        return requestedVolume;
+    }
+    
+    /// <summary>
+    /// Plays a one-shot audio clip at a given position with 3D spatial audio settings.
+    /// This is a replacement for AudioSource.PlayClipAtPoint() which uses 2D sound by default.
+    /// </summary>
+    /// <param name="clip">The audio clip to play.</param>
+    /// <param name="position">The world position to play the sound from.</param>
+    /// <param name="volume">The volume to play the sound at.</param>
+    public static void PlayClipAtPoint3D(AudioClip clip, Vector3 position, float volume)
+    {
+        if (clip == null)
+        {
+            Debug.LogWarning($"[SoundManager] Attempted to play a null audio clip at {position}.", Instance);
+            return;
+        }
+
+        // Check if sound should be muted
+        float effectiveVolume = GetEffectiveVolume(position, volume);
+        
+        if (effectiveVolume <= 0f)
+        {
+            // Sound is muted, don't play it
+            return;
+        }
+
+        // Create a temporary GameObject for the sound
+        GameObject soundGameObject = new GameObject("OneShotSound3D");
+        soundGameObject.transform.position = position;
+        
+        // Add AudioSource component with 3D spatial settings
+        AudioSource audioSource = soundGameObject.AddComponent<AudioSource>();
+        audioSource.clip = clip;
+        audioSource.volume = effectiveVolume;
+        audioSource.spatialBlend = 1.0f; // Full 3D sound
+        audioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+        audioSource.minDistance = 1f; // Start fading at 1 unit
+        audioSource.maxDistance = 50f; // Fully faded at 50 units
+        audioSource.dopplerLevel = 1.0f; // Enable doppler effect for moving sounds
+        audioSource.playOnAwake = false;
+        
+        // Play the sound
+        audioSource.Play();
+        
+        // Destroy the GameObject after the sound finishes
+        Destroy(soundGameObject, clip.length);
     }
 
     /// <summary>

@@ -107,12 +107,14 @@ public class HoopScorer : MonoBehaviour
         if (m_AudioSource == null)
         {
             m_AudioSource = gameObject.AddComponent<AudioSource>();
-            m_AudioSource.playOnAwake = false;
-            m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
-            m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
-            m_AudioSource.minDistance = 1f;
-            m_AudioSource.maxDistance = 50f;
         }
+        
+        // Always ensure 3D spatial audio settings are configured (even if AudioSource already existed)
+        m_AudioSource.playOnAwake = false;
+        m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
+        m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+        m_AudioSource.minDistance = 1f;
+        m_AudioSource.maxDistance = 50f;
         
         if (debugLogs)
         {
@@ -312,7 +314,8 @@ public class HoopScorer : MonoBehaviour
                 Debug.LogWarning("[HoopScorer] HoopScorer GameObject is not active in hierarchy! Sound may not play.", this);
             }
             
-            m_AudioSource.PlayOneShot(swishSound, swishVolume);
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, swishVolume);
+            m_AudioSource.PlayOneShot(swishSound, effectiveVolume);
             
             if (debugLogs)
             {

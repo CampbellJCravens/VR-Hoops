@@ -1139,9 +1139,8 @@ MonoBehaviour:
   launchPoint: {fileID: 8347629273007582602}
   targetPoint: {fileID: 0}
   launchAngle: 45
-  velocityMultiplier: 1.1
+  velocityMultiplier: 1.13
   canvas: {fileID: 5569848373064031771}
-  ballMachineSound: {fileID: 8300000, guid: b3ca1edc0bb9cee4489ac58d877af53b, type: 3}
   drawDebugTrajectory: 0
 --- !u!1 &5569848373064031771
 GameObject:

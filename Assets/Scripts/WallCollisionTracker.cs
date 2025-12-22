@@ -64,7 +64,8 @@ public class WallCollisionTracker : MonoBehaviour
                     // Multiply by the configured wall hit volume from SoundManager
                     float finalVolume = velocityBasedVolume * wallHitVolume;
                     
-                    m_AudioSource.PlayOneShot(wallHitSound, finalVolume);
+                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
+                    m_AudioSource.PlayOneShot(wallHitSound, effectiveVolume);
                     m_LastWallHitTime = Time.time;
                     
                     if (debugLogs)

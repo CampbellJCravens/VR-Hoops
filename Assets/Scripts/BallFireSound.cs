@@ -195,7 +195,8 @@ public class BallFireSound : MonoBehaviour
                 if (!m_AudioSource.isPlaying || m_AudioSource.clip != fireLoopSound)
                 {
                     m_AudioSource.clip = fireLoopSound;
-                    m_AudioSource.volume = fireVolume;
+                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, fireVolume);
+                    m_AudioSource.volume = effectiveVolume;
                     m_AudioSource.Play();
                     
                     if (debugLogs)
@@ -203,8 +204,9 @@ public class BallFireSound : MonoBehaviour
                 }
                 else
                 {
-                    // Already playing the correct sound, just update volume
-                    m_AudioSource.volume = fireVolume;
+                    // Already playing the correct sound, just update volume (accounting for mute settings)
+                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, fireVolume);
+                    m_AudioSource.volume = effectiveVolume;
                 }
             }
             else if (debugLogs)

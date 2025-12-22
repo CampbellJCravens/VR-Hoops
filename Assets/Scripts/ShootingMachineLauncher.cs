@@ -60,7 +60,8 @@ public class ShootingMachineLauncher : MonoBehaviour
         float ballMachineVolume = SoundManager.GetBallMachineVolume();
         if (ballMachineSound != null && m_AudioSource != null)
         {
-            m_AudioSource.PlayOneShot(ballMachineSound, ballMachineVolume);
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, ballMachineVolume);
+            m_AudioSource.PlayOneShot(ballMachineSound, effectiveVolume);
         }
         else if (ballMachineSound == null)
         {
@@ -191,6 +192,8 @@ public class ShootingMachineLauncher : MonoBehaviour
             m_AudioSource.playOnAwake = false;
             m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
             m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+            m_AudioSource.minDistance = 1f;
+            m_AudioSource.maxDistance = 50f;
         }
         
         FindPlayAreaManager();

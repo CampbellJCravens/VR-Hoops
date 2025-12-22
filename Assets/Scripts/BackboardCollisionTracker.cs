@@ -64,7 +64,8 @@ public class BackboardCollisionTracker : MonoBehaviour
                     // Multiply by the configured backboard hit volume from SoundManager
                     float finalVolume = velocityBasedVolume * backboardHitVolume;
                     
-                    m_AudioSource.PlayOneShot(backboardHitSound, finalVolume);
+                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
+                    m_AudioSource.PlayOneShot(backboardHitSound, effectiveVolume);
                     m_LastBackboardHitTime = Time.time;
                     
                     if (debugLogs)

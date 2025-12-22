@@ -120,7 +120,8 @@ public class RimFireSound : MonoBehaviour
         
         if (fireSound != null && m_AudioSource != null)
         {
-            m_AudioSource.PlayOneShot(fireSound, fireVolume);
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, fireVolume);
+            m_AudioSource.PlayOneShot(fireSound, effectiveVolume);
             
             if (debugLogs)
                 Debug.Log($"[RimFireSound] Playing rim fire activate sound at volume {fireVolume:F2}.", this);

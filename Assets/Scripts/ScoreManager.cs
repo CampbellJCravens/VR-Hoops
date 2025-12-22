@@ -949,14 +949,14 @@ public class ScoreManager : MonoBehaviour
                 OnFireStateChanged?.Invoke(false);
             }
             
-            // Play lose life sound effect from SoundManager
+            // Play lose life sound effect from SoundManager (3D spatial audio)
             AudioClip loseLifeSound = SoundManager.GetLoseLife();
             float loseLifeSoundVolume = SoundManager.GetLoseLifeVolume();
             if (loseLifeSound != null)
             {
-                AudioSource.PlayClipAtPoint(loseLifeSound, transform.position, loseLifeSoundVolume);
+                SoundManager.PlayClipAtPoint3D(loseLifeSound, transform.position, loseLifeSoundVolume);
                 if (debugLogs)
-                    Debug.Log($"[ScoreManager] Playing lose life sound at volume {loseLifeSoundVolume:F2}.", this);
+                    Debug.Log($"[ScoreManager] Playing lose life sound at volume {loseLifeSoundVolume:F2} (3D spatial).", this);
             }
             else if (debugLogs)
             {
@@ -1107,9 +1107,9 @@ public class ScoreManager : MonoBehaviour
         float gainLifeSoundVolume = SoundManager.GetGainLifeVolume();
         if (gainLifeSound != null)
         {
-            AudioSource.PlayClipAtPoint(gainLifeSound, transform.position, gainLifeSoundVolume);
+            SoundManager.PlayClipAtPoint3D(gainLifeSound, transform.position, gainLifeSoundVolume);
             if (debugLogs)
-                Debug.Log($"[ScoreManager] Playing gain life sound at volume {gainLifeSoundVolume:F2}.", this);
+                Debug.Log($"[ScoreManager] Playing gain life sound at volume {gainLifeSoundVolume:F2} (3D spatial).", this);
         }
         else if (debugLogs)
         {
@@ -1235,9 +1235,9 @@ public class ScoreManager : MonoBehaviour
         float gameOverSoundVolume = SoundManager.GetGameOverVolume();
         if (gameOverSound != null)
         {
-            AudioSource.PlayClipAtPoint(gameOverSound, transform.position, gameOverSoundVolume);
+            SoundManager.PlayClipAtPoint3D(gameOverSound, transform.position, gameOverSoundVolume);
             if (debugLogs)
-                Debug.Log($"[ScoreManager] Playing game over sound at volume {gameOverSoundVolume:F2}.", this);
+                Debug.Log($"[ScoreManager] Playing game over sound at volume {gameOverSoundVolume:F2} (3D spatial).", this);
         }
         else if (debugLogs)
         {

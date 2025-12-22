@@ -5263,7 +5263,9 @@ MonoBehaviour:
   maxSpin: 20
   minReleaseSpeed: 0.5
   sampleWindowSeconds: 0.15
-  debug: 1
+  backspinPriority: 0.8
+  sideSpinReduction: 0.7
+  debug: 0
 --- !u!114 &5785128994416613867
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -5719,7 +5719,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4310127460983713710, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_VersionIndex
-      value: 4522
+      value: 4537
       objectReference: {fileID: 0}
     - target: {fileID: 8311765832967122105, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5728,10 +5728,6 @@ PrefabInstance:
     - target: {fileID: 8440177211894470933, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_Name
       value: BasketballHoop
-      objectReference: {fileID: 0}
-    - target: {fileID: 8443958228262072854, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
-      propertyPath: debugLogs
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8705649861602657093, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_LocalPosition.x

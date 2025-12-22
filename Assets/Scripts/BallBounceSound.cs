@@ -82,7 +82,8 @@ public class BallBounceSound : MonoBehaviour
             float configuredVolume = SoundManager.GetBallBounceVolume();
             float finalVolume = velocityBasedVolume * configuredVolume;
             
-            m_AudioSource.PlayOneShot(bounceSound, finalVolume);
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
+            m_AudioSource.PlayOneShot(bounceSound, effectiveVolume);
             m_LastBounceTime = Time.time;
             
             Debug.Log($"[BallBounceSound] ✅ Playing bounce sound! Collision velocity: {collisionVelocity:F2} m/s, Velocity volume: {velocityBasedVolume:F2}, Configured volume: {configuredVolume:F2}, Final volume: {finalVolume:F2}, Sound: {bounceSound.name}", this);
