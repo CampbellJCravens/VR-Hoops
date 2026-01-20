@@ -107,7 +107,11 @@ public class StartGameManager : MonoBehaviour
         if (playAreaManager != null)
         {
             bool isGamePlaying = playAreaManager.GetGameState() == PlayAreaManager.GameState.Playing;
+#if NORMCORE
             bool isPlayAreaOccupied = !playAreaManager.IsAvailable(); // Play area is occupied if not available
+#else
+            bool isPlayAreaOccupied = false; // Without NORMCORE, assume not occupied (single player)
+#endif
             
             if (isGamePlaying || isPlayAreaOccupied)
             {
@@ -131,7 +135,11 @@ public class StartGameManager : MonoBehaviour
         if (playAreaManager != null)
         {
             bool isPregame = playAreaManager.GetGameState() == PlayAreaManager.GameState.Pregame;
+#if NORMCORE
             bool isAvailable = playAreaManager.IsAvailable();
+#else
+            bool isAvailable = true; // Without NORMCORE, assume always available (single player)
+#endif
             canShowCanvas = isPregame && isAvailable;
             
             if (!canShowCanvas && debugLogs)
@@ -294,7 +302,11 @@ public class StartGameManager : MonoBehaviour
         if (playAreaManager == null)
             return;
 
+#if NORMCORE
         bool isAvailable = playAreaManager.IsAvailable();
+#else
+        bool isAvailable = true; // Without NORMCORE, assume always available (single player)
+#endif
         
         if (newState == PlayAreaManager.GameState.Playing || !isAvailable)
         {

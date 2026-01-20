@@ -799,10 +799,12 @@ public class PlayAreaManager : MonoBehaviour
     /// </summary>
     public int GetOwner()
     {
+#if NORMCORE
         if (model != null)
         {
             return model.ownerClientID;
         }
+#endif
         return -1;
     }
     
@@ -812,9 +814,14 @@ public class PlayAreaManager : MonoBehaviour
     /// </summary>
     public bool IsAvailable()
     {
+#if NORMCORE
         int owner = GetOwner();
         // Treat both -1 (explicitly unowned) and 0 (uninitialized) as available
         return owner == -1 || owner == 0;
+#else
+        // Without NORMCORE, assume play area is always available (single player)
+        return true;
+#endif
     }
     
     /// <summary>
@@ -822,8 +829,13 @@ public class PlayAreaManager : MonoBehaviour
     /// </summary>
     public bool IsOwnedByLocalClient()
     {
+#if NORMCORE
         if (realtime == null) return false;
         return GetOwner() == realtime.clientID;
+#else
+        // Without NORMCORE, assume local client always owns (single player)
+        return true;
+#endif
     }
     
     /// <summary>

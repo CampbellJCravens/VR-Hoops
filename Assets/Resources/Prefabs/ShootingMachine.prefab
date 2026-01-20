@@ -1138,8 +1138,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShootingMachineLauncher
   launchPoint: {fileID: 8347629273007582602}
   targetPoint: {fileID: 0}
-  launchAngle: 45
-  velocityMultiplier: 1.13
+  launchAngle: 43
+  velocityMultiplier: 1.22
   canvas: {fileID: 5569848373064031771}
   drawDebugTrajectory: 0
 --- !u!1 &5569848373064031771

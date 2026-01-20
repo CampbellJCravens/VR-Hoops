@@ -1883,7 +1883,7 @@ Transform:
   m_GameObject: {fileID: 3614516743319284044}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.783, y: 0.502, z: 0}
+  m_LocalPosition: {x: 1.783, y: 1.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2246,7 +2246,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.927, y: 0.599}
+  m_AnchoredPosition: {x: -1.927, y: 1.242}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &4966772612280946633
@@ -5167,7 +5167,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StartGameManager
   startGameCanvas: {fileID: 4334247850542593289}
   playAreaManager: {fileID: 5307985670145211989}
-  showDistance: 9
+  showDistance: 6
   playerTag: Player
   debugLogs: 0
 --- !u!1 &8832474742741107823
@@ -5599,7 +5599,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2688026090625556707, guid: d3a342eda6d228f46b6e0feed2c094ed, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.437
       objectReference: {fileID: 0}
     - target: {fileID: 2688026090625556707, guid: d3a342eda6d228f46b6e0feed2c094ed, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5640,6 +5640,14 @@ PrefabInstance:
     - target: {fileID: 5465310742432863112, guid: d3a342eda6d228f46b6e0feed2c094ed, type: 3}
       propertyPath: m_Name
       value: ShootingMachine
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494604677332439108, guid: d3a342eda6d228f46b6e0feed2c094ed, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494604677332439108, guid: d3a342eda6d228f46b6e0feed2c094ed, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.546
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

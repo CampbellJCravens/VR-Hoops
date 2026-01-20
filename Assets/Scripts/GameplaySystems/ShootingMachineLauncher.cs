@@ -102,9 +102,17 @@ public class ShootingMachineLauncher : MonoBehaviour
         }
 
         // Track ball spawn count (canvas is now always visible)
-        if (m_PlayAreaManager != null && m_PlayAreaManager.IsOwnedByLocalClient())
+        if (m_PlayAreaManager != null)
         {
+#if NORMCORE
+            if (m_PlayAreaManager.IsOwnedByLocalClient())
+            {
+                m_BallsSpawned++;
+            }
+#else
+            // Without NORMCORE, always increment (single player)
             m_BallsSpawned++;
+#endif
         }
     }
 
@@ -313,7 +321,18 @@ public class ShootingMachineLauncher : MonoBehaviour
         if (newState == PlayAreaManager.GameState.Playing)
         {
             // Reset ball spawn count when game starts (only for owner)
-            if (m_PlayAreaManager != null && m_PlayAreaManager.IsOwnedByLocalClient())
+            if (m_PlayAreaManager != null)
+            {
+#if NORMCORE
+                if (m_PlayAreaManager.IsOwnedByLocalClient())
+                {
+                    m_BallsSpawned = 0;
+                }
+#else
+                // Without NORMCORE, always reset (single player)
+                m_BallsSpawned = 0;
+#endif
+            }
             {
                 m_BallsSpawned = 0;
             }

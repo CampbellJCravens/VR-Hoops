@@ -784,7 +784,11 @@ public class ScoreManager : MonoBehaviour
     public void RegisterScore(int row, bool isMoneyBall)
     {
         // ALWAYS log RegisterScore - this is critical for debugging
+#if NORMCORE
         Debug.Log($"[ScoreManager] 🎯 RegisterScore CALLED! row={row}, isMoneyBall={isMoneyBall}, currentScore BEFORE: {m_Score}, isGameOver={m_IsGameOver}, IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}", this);
+#else
+        Debug.Log($"[ScoreManager] 🎯 RegisterScore CALLED! row={row}, isMoneyBall={isMoneyBall}, currentScore BEFORE: {m_Score}, isGameOver={m_IsGameOver}", this);
+#endif
         
         // Don't register scores if game is over
         if (m_IsGameOver)
@@ -1157,7 +1161,11 @@ public class ScoreManager : MonoBehaviour
         if (scoreText != null)
         {
             // ALWAYS log when score display is updated - this is critical for debugging
+#if NORMCORE
             Debug.Log($"[ScoreManager] 🖥️ UpdateScoreDisplay: Setting UI text to '{m_Score}', IsOwner: {isOwnedLocallySelf}, ClientID: {realtime?.clientID}, model.score: {model?.score ?? -999}", this);
+#else
+            Debug.Log($"[ScoreManager] 🖥️ UpdateScoreDisplay: Setting UI text to '{m_Score}'", this);
+#endif
             scoreText.text = $"{m_Score}";
         }
     }

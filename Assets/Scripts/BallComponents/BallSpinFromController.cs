@@ -406,7 +406,8 @@ public class BallSpinFromController : MonoBehaviour
         
         // Backspin axis is horizontal and perpendicular to the horizontal velocity direction
         // This creates rotation that makes the ball spin backward (backspin)
-        Vector3 backspinAxis = Vector3.Cross(Vector3.up, horizontalVelocity).normalized;
+        // Inverted cross product to ensure backspin (backward rotation) instead of topspin (forward rotation)
+        Vector3 backspinAxis = Vector3.Cross(horizontalVelocity, Vector3.up).normalized;
         
         // Project angular velocity onto the backspin axis
         float backspinMagnitude = Vector3.Dot(angularVelocity, backspinAxis);

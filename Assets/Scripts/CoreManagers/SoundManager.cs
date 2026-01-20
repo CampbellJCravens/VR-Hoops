@@ -408,9 +408,11 @@ public class SoundManager : MonoBehaviour
             if (playArea == null)
                 continue;
             
+#if NORMCORE
             // Check if this PlayArea is owned by the local client
             if (!playArea.IsOwnedByLocalClient())
                 continue;
+#endif
             
             // Check if the position is within this PlayArea's bounds
             // We'll use a simple distance check from the PlayArea's center

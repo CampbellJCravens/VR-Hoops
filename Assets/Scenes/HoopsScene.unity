@@ -5834,7 +5834,7 @@ PrefabInstance:
       objectReference: {fileID: 85033002}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4651
+      value: 4777
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
@@ -7095,7 +7095,7 @@ PrefabInstance:
       objectReference: {fileID: 808118233}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4651
+      value: 4777
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
@@ -7868,7 +7868,7 @@ MonoBehaviour:
   ballMachine: {fileID: 8300000, guid: b3ca1edc0bb9cee4489ac58d877af53b, type: 3}
   ballMachineVolume: 3
   swish: {fileID: 8300000, guid: da43bca77ccace44e8cdc0d492756e5c, type: 3}
-  swishVolume: 1
+  swishVolume: 0.5
   rimHit: {fileID: 8300000, guid: efd95a3f6fe8844409e120a802b54d6d, type: 3}
   rimHitVolume: 1
   backboardHit: {fileID: 8300000, guid: 14fc3edbe7f3e82428079e1beca69fc0, type: 3}
@@ -7876,7 +7876,7 @@ MonoBehaviour:
   wallHit: {fileID: 8300000, guid: 3d73c93aa23d6114c98dbd6ccaa79080, type: 3}
   wallHitVolume: 3
   gameOver: {fileID: 8300000, guid: f018bd09b3942c349a7095d4c2da4ec0, type: 3}
-  gameOverVolume: 1
+  gameOverVolume: 0.5
   loseLife: {fileID: 8300000, guid: 91b643d08edb2d34a96c396e63085dee, type: 3}
   loseLifeVolume: 1
   gainLife: {fileID: 8300000, guid: 37b755f33273a1a499e288a04a72271b, type: 3}
@@ -7894,7 +7894,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 0c8ed3166cb214e4484b4956b7661628, type: 3}
   - {fileID: 8300000, guid: 93a615bdae560144e9d16c1705f73e33, type: 3}
   - {fileID: 8300000, guid: 7e3a0725d3e164d40aabb38d8065c57d, type: 3}
-  backgroundMusicVolume: 0.05
+  backgroundMusicVolume: 0.025
   useSpatialAudioForMusic: 0
   muteInPlayArea: 0
 --- !u!114 &1326966877
@@ -8613,8 +8613,8 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1424681382}
   m_LocalRotation: {x: 0.19428565, y: 0, z: 0, w: 0.980945}
-  m_LocalPosition: {x: 0, y: 0, z: 4.4}
-  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1757274538}
@@ -8625,7 +8625,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 22.406, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 5, y: -60}
+  m_AnchoredPosition: {x: 0, y: -24.8}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!43 &1440470213
@@ -11181,7 +11181,7 @@ PrefabInstance:
       objectReference: {fileID: 1395461931}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4651
+      value: 4777
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
@@ -12490,7 +12490,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
+  m_ScaleFactor: 3.5
   m_ReferenceResolution: {x: 800, y: 600}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
@@ -12510,7 +12510,7 @@ Canvas:
   serializedVersion: 3
   m_RenderMode: 1
   m_Camera: {fileID: 7917674759129574813}
-  m_PlaneDistance: 1
+  m_PlaneDistance: 2
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
   m_OverrideSorting: 0
@@ -14053,7 +14053,7 @@ PrefabInstance:
       objectReference: {fileID: 1900787000}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4651
+      value: 4777
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
@@ -19446,7 +19446,7 @@ PrefabInstance:
       objectReference: {fileID: 1440470213}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4663
+      value: 4789
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
