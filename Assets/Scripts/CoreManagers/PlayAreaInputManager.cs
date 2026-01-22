@@ -16,7 +16,7 @@ public class PlayAreaInputManager : MonoBehaviour
     [SerializeField] private InputActionProperty endGameAction;
 
     [Header("References")]
-    [Tooltip("The PlayAreaManager this input manager belongs to. Should be assigned in the Inspector.")]
+    [Tooltip("The PlayAreaManager this input manager belongs to.")]
     [SerializeField] private PlayAreaManager playAreaManager;
 
     private void OnEnable()

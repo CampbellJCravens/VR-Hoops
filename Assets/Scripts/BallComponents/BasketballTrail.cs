@@ -33,8 +33,8 @@ public class BasketballTrail : MonoBehaviour
     [Tooltip("Width of the trail at the end (farthest from the ball).")]
     [SerializeField] private float endWidth = 0.02f;
     
-    [Tooltip("Material for the trail. If not assigned, will create a default material.")]
-    [SerializeField] private Material trailMaterial;
+    [Tooltip("Material for the trail.")]
+    private Material trailMaterial;
 
     private XRGrabInteractable m_GrabInteractable;
     private Rigidbody m_Rigidbody;
@@ -168,16 +168,7 @@ public class BasketballTrail : MonoBehaviour
     private Material CreateDefaultTrailMaterial()
     {
         // Create a simple unlit material for the trail
-        // Try URP shader first, fallback to built-in
-        Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        if (shader == null)
-        {
-            shader = Shader.Find("Sprites/Default");
-        }
-        if (shader == null)
-        {
-            shader = Shader.Find("Unlit/Color");
-        }
+        Shader shader = Shader.Find("Unlit/Color");
         
         Material mat = new Material(shader);
         mat.color = trailColor;

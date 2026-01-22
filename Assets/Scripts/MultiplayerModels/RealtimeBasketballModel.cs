@@ -9,9 +9,8 @@ using Normal.Realtime.Serialization;
 [RealtimeModel]
 public partial class RealtimeBasketballModel
 {
-    /// <summary>
-    /// Material type: 0 = Orange, 1 = Black, 2 = RedWhiteBlue
-    /// </summary>
+    
+    // Material type: 0 = Orange, 1 = Black, 2 = RedWhiteBlue
     [RealtimeProperty(1, true, true)]
     private int _materialType;
 }

@@ -51,11 +51,7 @@ public class ShootingMachineLauncher : MonoBehaviour
 
         // Apply velocity to ball's rigidbody
         Rigidbody rb = ball.GetComponent<Rigidbody>();
-#if UNITY_2023_3_OR_NEWER
         rb.linearVelocity = launchVelocity;
-#else
-        rb.velocity = launchVelocity;
-#endif
         rb.angularVelocity = Vector3.zero; // Start with no spin
 
         if (drawDebugTrajectory)
@@ -97,7 +93,6 @@ public class ShootingMachineLauncher : MonoBehaviour
         // Avoid division by zero or negative values
         if (denominator <= 0f)
         {
-            // Fallback: use a simple calculation
             float fallbackVelocityMagnitude = Mathf.Sqrt(gravity * horizontalDistance / Mathf.Sin(2f * angleRad));
             Vector3 direction = toTarget.normalized;
             direction.y = Mathf.Tan(angleRad);
@@ -138,7 +133,6 @@ public class ShootingMachineLauncher : MonoBehaviour
 
     private void Awake()
     {
-        AutoFindReferences();
         
         // Canvas is always visible now
         canvas.SetActive(true);
@@ -164,23 +158,9 @@ public class ShootingMachineLauncher : MonoBehaviour
         UnsubscribeFromGameStateChanges();
     }
 
-    private void OnValidate()
-    {
-        AutoFindReferences();
-    }
-
-    private void AutoFindReferences()
-    {
-    }
-
-    /// <summary>
-    /// Finds the PlayAreaManager in the parent hierarchy.
-    /// Note: Auto-finding is disabled. PlayAreaManager should be assigned via reference.
-    /// </summary>
+    
     private void FindPlayAreaManager()
     {
-        // Auto-finding disabled - PlayAreaManager should be assigned via reference
-        // For now, try GetComponentInParent as fallback but log error if not found
         m_PlayAreaManager = GetComponentInParent<PlayAreaManager>();
     }
 

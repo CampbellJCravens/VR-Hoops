@@ -16,7 +16,7 @@ public class PlayerShootingPointTrigger : MonoBehaviour
     [SerializeField] private InputActionProperty startGameAction;
 
     [Header("References")]
-    [Tooltip("The PlayAreaManager for this play area. If not assigned, will search parent.")]
+    [Tooltip("The PlayAreaManager for this play area.")]
     [SerializeField] private PlayAreaManager playAreaManager;
 
     [Header("Settings")]

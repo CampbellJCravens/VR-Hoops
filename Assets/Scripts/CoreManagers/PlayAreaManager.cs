@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion;
-using UnityEngine.XR.Interaction.Toolkit;
+
 using Unity.XR.CoreUtils;
 using Normal.Realtime;
 
@@ -674,7 +674,7 @@ public class PlayAreaManager : RealtimeComponent<RealtimePlayAreaModel>
     {
         // Get the XR Origin component
         XROrigin xrOrigin = playerRoot.GetComponent<XROrigin>();
-        // Fallback: just move the root transform
+        // Move the root transform
         playerRoot.position = playerShootingPoint.position;
         playerRoot.rotation = playerShootingPoint.rotation;
 
@@ -696,20 +696,14 @@ public class PlayAreaManager : RealtimeComponent<RealtimePlayAreaModel>
         xrOrigin.Origin.transform.position = targetOriginPosition;
         
         // Rotate player to face the ShootingMachine
+        // Calculate horizontal direction from player to shooting machine (ignoring vertical difference)
+        // and rotate the player to face that direction
         Transform shootingMachineTransform = shootingMachine.transform;
         Vector3 directionToMachine = shootingMachineTransform.position - xrOrigin.Origin.transform.position;
         directionToMachine.y = 0; // Keep rotation on horizontal plane only
         
-        if (directionToMachine.magnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(directionToMachine.normalized);
-            xrOrigin.Origin.transform.rotation = targetRotation;
-        }
-        else
-        {
-            // Fallback: use shooting point rotation if no ShootingMachine found
-            xrOrigin.Origin.transform.rotation = playerShootingPoint.rotation;
-        }
+        Quaternion targetRotation = Quaternion.LookRotation(directionToMachine.normalized);
+        xrOrigin.Origin.transform.rotation = targetRotation;
     }
 
     /// <summary>
@@ -777,30 +771,16 @@ public class PlayAreaManager : RealtimeComponent<RealtimePlayAreaModel>
         m_MoneyBallInPlay = false;
 
         // Reset hoop position to start
-        if (hoopPositionsManager != null)
+        hoopPositionsManager.ResetToStartPosition();
+        
+        // Sync the reset position to multiplayer model (only owner can write)
+        if (IsOwnedByLocalClient())
         {
-            hoopPositionsManager.ResetToStartPosition();
-            
-            // Sync the reset position to multiplayer model (only owner can write)
-            if (IsOwnedByLocalClient())
-            {
-                Vector2Int resetCoord = hoopPositionsManager.GetCurrentCoordinate();
-                OnHoopPositionChanged(resetCoord);
-            }
+            Vector2Int resetCoord = hoopPositionsManager.GetCurrentCoordinate();
+            OnHoopPositionChanged(resetCoord);
         }
-        else
-        {
-        }
-
-        // Reset shot counter (clears the counted balls set)
-        // Note: ShotCounterManager should be assigned via PlayAreaManager or found through proper references
-        // This is a fallback that requires proper assignment
-        {
-            // ShotCounterManager reset is handled through ScoreManager if needed
-        }
-
-        // Note: Score and lives are managed globally by ScoreManager
-        // They will be reset when the first game starts or when transitioning from GameOver
+        
+        
     }
     
     /// <summary>

@@ -212,8 +212,6 @@ public class HoopScorer : MonoBehaviour
     /// </summary>
     private int GetHoopRow()
     {
-        // Auto-finding is disabled. HoopPositionsManager should be assigned via reference.
-        // For now, try GetComponentInParent as fallback but log error
         HoopPositionsManager positionsManager = GetComponentInParent<HoopPositionsManager>();
         Vector2Int currentCoord = positionsManager.GetCurrentCoordinate();
         // coordinate.y is the row (0 = first row, 1 = second row, 2 = third row)

@@ -13,15 +13,12 @@ public class LifeHeartUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI amountText;
     
     [Header("Animation")]
-    [Tooltip("Animator component for the LifeHeart animation controller. If not assigned, will try to find on this GameObject.")]
+    [Tooltip("Animator component for the LifeHeart animation controller.")]
     [SerializeField] private Animator lifeHeartAnimator;
     
     private PlayAreaManager m_ActivePlayArea;
 
-    /// <summary>
-    /// Gets the active PlayAreaManager (the one in Playing state that is owned by the local client).
-    /// Caches the result to avoid searching every frame.
-    /// </summary>
+    // Gets the active PlayAreaManager (the one in Playing state that is owned by the local client).
     private PlayAreaManager GetActivePlayAreaManager()
     {
         // If we have a cached active PlayArea, check if it's still in Playing state and owned by us
