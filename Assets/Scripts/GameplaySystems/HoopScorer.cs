@@ -173,16 +173,6 @@ public class HoopScorer : MonoBehaviour
         float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, swishVolume);
         m_AudioSource.PlayOneShot(swishSound, effectiveVolume);
 
-        // Mark ball as scored
-        BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
-        tracker.MarkAsScored();
-
-        // Invoke event
-        OnScored?.Invoke();
-
-        // Get hoop row for scoring
-        int hoopRow = GetHoopRow();
-        
         // Check if ball is a money ball
         bool isMoneyBall = false;
         BasketballVisualController visualController = ball.GetComponent<BasketballVisualController>();
@@ -194,13 +184,26 @@ public class HoopScorer : MonoBehaviour
             moneyBurstParticleSystem.Play();
         }
 
-        // Update score manager (find through PlayArea hierarchy)
-        PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
-        ScoreManager scoreManager = playAreaManager.GetScoreManager();
-        // Only register score on the client that owns the PlayArea
-        if (playAreaManager.IsOwnedByLocalClient())
+        // Mark ball as scored
+        BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
+        if (tracker != null)
         {
-            scoreManager.RegisterScore(hoopRow, isMoneyBall);
+            tracker.MarkAsScored();
+
+            // Invoke event
+            OnScored?.Invoke();
+
+            // Get hoop row for scoring
+            int hoopRow = GetHoopRow();
+            
+            // Update score manager (find through PlayArea hierarchy)
+            PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
+            ScoreManager scoreManager = playAreaManager.GetScoreManager();
+            // Only register score on the client that owns the PlayArea
+            if (playAreaManager.IsOwnedByLocalClient())
+            {
+                scoreManager.RegisterScore(hoopRow, isMoneyBall);
+            }
         }
     }
 

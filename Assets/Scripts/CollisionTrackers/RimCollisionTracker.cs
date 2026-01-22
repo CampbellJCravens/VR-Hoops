@@ -38,6 +38,10 @@ public class RimCollisionTracker : MonoBehaviour
     {
         // Check if the colliding object is a ball
         GameObject ball = FindBallRoot(collision.gameObject);
+        if (ball == null)
+        {
+            return;
+        }
         
         // Get collision velocity for sound volume scaling
         float collisionVelocity = collision.relativeVelocity.magnitude;
@@ -46,6 +50,7 @@ public class RimCollisionTracker : MonoBehaviour
         if (collisionVelocity >= minCollisionVelocity && Time.time - m_LastRimHitTime >= rimHitCooldown)
         {
             // Play rim hit sound effect from SoundManager
+            // Sound can play on all clients for audio feedback
             AudioClip rimHitSound = SoundManager.GetRimHit();
             float rimHitVolume = SoundManager.GetRimHitVolume();
             
@@ -61,12 +66,15 @@ public class RimCollisionTracker : MonoBehaviour
             m_LastRimHitTime = Time.time;
         }
         
-        // Mark the ball as having hit the rim
+        // Mark the ball as having hit the rim (only if BallStateTracker exists - owner only)
         BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
-        // Only mark as hit rim if ball hasn't scored yet (once scored, don't override)
-        if (!tracker.HasScored())
+        if (tracker != null)
         {
-            tracker.MarkAsHitRim();
+            // Only mark as hit rim if ball hasn't scored yet (once scored, don't override)
+            if (!tracker.HasScored())
+            {
+                tracker.MarkAsHitRim();
+            }
         }
     }
 

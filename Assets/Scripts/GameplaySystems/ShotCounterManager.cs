@@ -70,6 +70,12 @@ public class ShotCounterManager : MonoBehaviour
     /// </summary>
     public void OnTriggerEntered(Collider other)
     {
+        // Only process shots on the owner client to avoid duplicate state updates
+        if (!playAreaManager.IsOwnedByLocalClient())
+        {
+            return;
+        }
+        
         // Check if the colliding object itself has the tag
         if (other.CompareTag(ballTag))
         {

@@ -182,7 +182,6 @@ public class PlayAreaManager : RealtimeComponent<RealtimePlayAreaModel>
         
         // Spawn the ball (use Realtime.Instantiate for multiplayer sync)
         GameObject newBall = Realtime.Instantiate(prefabName, spawnPosition, spawnRotation, options);
-        newBall.GetComponent<BallFireSound>().Initialize(scoreManager);
         
         // Parent the ball to this PlayAreaManager so GetComponentInParent works
         newBall.transform.SetParent(transform);

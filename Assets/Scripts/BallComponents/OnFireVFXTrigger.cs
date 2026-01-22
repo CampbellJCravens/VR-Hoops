@@ -60,27 +60,41 @@ public class OnFireVFXTrigger : MonoBehaviour
         }
     }
 
-    private void OnEnable()
+    /// <summary>
+    /// Gets the ScoreManager via lazy getter. Finds and caches it when first accessed.
+    /// Works on all clients once the ball is parented (owner sets parent immediately, non-owners get it via network sync).
+    /// </summary>
+    private ScoreManager GetScoreManager()
     {
-        // Find ScoreManager through PlayAreaManager in parent hierarchy
+        // If already cached, return it
+        if (m_ScoreManager != null)
+        {
+            return m_ScoreManager;
+        }
+
+        // Try to find it via parent hierarchy
         PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
         if (playAreaManager != null)
         {
             m_ScoreManager = playAreaManager.GetScoreManager();
         }
-        
-        // Subscribe to On Fire state changes for immediate updates
-        if (m_ScoreManager != null)
-        {
-            m_ScoreManager.OnFireStateChanged += OnFireStateChangedHandler;
-        }
+
+        return m_ScoreManager;
+    }
+
+    private void OnEnable()
+    {
+        // Don't try to get ScoreManager here - parent might not be set yet
+        // We'll get it lazily when needed
     }
 
     private void OnDisable()
     {
-        // Unsubscribe from events
-        m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
-        m_ScoreManager = null;
+        // Unsubscribe from events if we have a reference
+        if (m_ScoreManager != null)
+        {
+            m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
+        }
     }
 
     private void Start()
@@ -105,37 +119,26 @@ public class OnFireVFXTrigger : MonoBehaviour
             m_ParticleSystem.gameObject.SetActive(true);
         }
         
-        // Find ScoreManager if not already found (in case it wasn't available in OnEnable)
-        if (m_ScoreManager == null)
+        // Get ScoreManager via lazy getter (will find it now that parent is set)
+        ScoreManager scoreManager = GetScoreManager();
+        if (scoreManager == null)
         {
-            PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
-            if (playAreaManager != null)
-            {
-                m_ScoreManager = playAreaManager.GetScoreManager();
-            }
+            // Parent not set yet, can't initialize - will be called again later
+            // Ensure VFX is off until we can initialize
+            m_ParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            return;
         }
 
-        // Subscribe if not already subscribed
-        if (m_ScoreManager != null)
-        {
-            m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler; // Remove first to avoid duplicates
-            m_ScoreManager.OnFireStateChanged += OnFireStateChangedHandler;
-        }
+        // Unsubscribe first to avoid duplicates
+        scoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
+        scoreManager.OnFireStateChanged += OnFireStateChangedHandler;
         
-        if (m_ScoreManager != null)
-        {
-            bool currentFireState = m_ScoreManager.IsOnFire();
-            m_WasOnFire = currentFireState;
-            
-            // Always update VFX state, even if it seems correct (to ensure it's properly started)
-            UpdateVFXState(currentFireState);
-            m_Initialized = true;
-        }
-        else
-        {
-            // If ScoreManager doesn't exist yet, ensure VFX is off
-            m_ParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
+        bool currentFireState = scoreManager.IsOnFire();
+        m_WasOnFire = currentFireState;
+        
+        // Always update VFX state, even if it seems correct (to ensure it's properly started)
+        UpdateVFXState(currentFireState);
+        m_Initialized = true;
     }
 
     /// <summary>
@@ -145,44 +148,6 @@ public class OnFireVFXTrigger : MonoBehaviour
     {
         UpdateVFXState(isOnFire);
         m_WasOnFire = isOnFire;
-    }
-
-    private void Update()
-    {
-        // Find ScoreManager if not cached
-        if (m_ScoreManager == null)
-        {
-            PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
-            if (playAreaManager != null)
-            {
-                m_ScoreManager = playAreaManager.GetScoreManager();
-                // Subscribe now that we found it
-                if (m_ScoreManager != null)
-                {
-                    m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
-                    m_ScoreManager.OnFireStateChanged += OnFireStateChangedHandler;
-                    
-                    // Initialize VFX state now that we found ScoreManager
-                    if (!m_Initialized)
-                    {
-                        InitializeVFX();
-                    }
-                }
-            }
-        }
-
-        // Fallback: Check if On Fire state has changed (in case event wasn't fired)
-        // This ensures we catch any state changes even if event system fails
-        if (m_Initialized && m_ScoreManager != null)
-        {
-            bool isOnFire = m_ScoreManager.IsOnFire();
-            
-            if (isOnFire != m_WasOnFire)
-            {
-                UpdateVFXState(isOnFire);
-                m_WasOnFire = isOnFire;
-            }
-        }
     }
 
     /// <summary>

@@ -28,17 +28,36 @@ public class BallFireSound : MonoBehaviour
         }
     }
 
-    public void Initialize(ScoreManager scoreManager)
+    /// <summary>
+    /// Gets the ScoreManager via lazy getter. Finds and caches it when first accessed.
+    /// Works on all clients once the ball is parented (owner sets parent immediately, non-owners get it via network sync).
+    /// </summary>
+    private ScoreManager GetScoreManager()
     {
-        m_ScoreManager = scoreManager;
-        m_ScoreManager.OnFireStateChanged += OnFireStateChangedHandler;
-        InitializeFireSound();
+        // If already cached, return it
+        if (m_ScoreManager != null)
+        {
+            return m_ScoreManager;
+        }
+
+        // Try to find it via parent hierarchy
+        PlayAreaManager playAreaManager = GetComponentInParent<PlayAreaManager>();
+        if (playAreaManager != null)
+        {
+            m_ScoreManager = playAreaManager.GetScoreManager();
+        }
+
+        return m_ScoreManager;
     }
 
 
     private void OnDisable()
     {
-        m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
+        // Unsubscribe from events if we have a reference
+        if (m_ScoreManager != null)
+        {
+            m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
+        }
         
         // Stop sound when disabled
         if (m_AudioSource.isPlaying)
@@ -55,10 +74,19 @@ public class BallFireSound : MonoBehaviour
         if (m_Initialized)
             return;
         
-        m_ScoreManager.OnFireStateChanged -= OnFireStateChangedHandler; // Remove first to avoid duplicates
-        m_ScoreManager.OnFireStateChanged += OnFireStateChangedHandler;
+        // Get ScoreManager via lazy getter (will find it now that parent is set)
+        ScoreManager scoreManager = GetScoreManager();
+        if (scoreManager == null)
+        {
+            // Parent not set yet, can't initialize - will be called again later
+            return;
+        }
+
+        // Unsubscribe first to avoid duplicates
+        scoreManager.OnFireStateChanged -= OnFireStateChangedHandler;
+        scoreManager.OnFireStateChanged += OnFireStateChangedHandler;
         
-        bool currentFireState = m_ScoreManager.IsOnFire();
+        bool currentFireState = scoreManager.IsOnFire();
         m_WasOnFire = currentFireState;
         
         // Update sound state based on current fire state

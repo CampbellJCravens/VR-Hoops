@@ -19529,6 +19529,10 @@ PrefabInstance:
       propertyPath: lifeChangedUIGameObject
       value: 
       objectReference: {fileID: 1510513978}
+    - target: {fileID: 8416953991163508025, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: consecutiveScoresForOnFire
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
