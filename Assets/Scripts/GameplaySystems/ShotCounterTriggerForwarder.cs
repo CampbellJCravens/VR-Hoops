@@ -19,12 +19,8 @@ public class ShotCounterTriggerForwarder : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (m_Manager != null)
-        {
-            // Forward the trigger event to the manager
-            // Pass 'other' (the collider that entered) so the manager can process the ball
-            m_Manager.OnTriggerEntered(other);
-        }
+        // Forward the trigger event to the manager
+        // Pass 'other' (the collider that entered) so the manager can process the ball
+        m_Manager.OnTriggerEntered(other);
     }
 }
-

@@ -44,45 +44,25 @@ public class BasketballAffordanceFixer : MonoBehaviour
 
     private void FixAffordanceRenderer()
     {
-        // Find the Visuals child object
+        // Auto-finding is disabled. Visuals and Affordance transforms should be assigned via reference.
+        // For now, try transform.Find as fallback but log error
         Transform visualsTransform = transform.Find(visualsChildName);
-        if (visualsTransform == null)
-        {
-            Debug.LogWarning($"[BasketballAffordanceFixer] Could not find '{visualsChildName}' child object on {gameObject.name}.", this);
-            return;
-        }
 
         // Get the MeshRenderer from Visuals
         MeshRenderer visualsRenderer = visualsTransform.GetComponent<MeshRenderer>();
-        if (visualsRenderer == null)
-        {
-            Debug.LogWarning($"[BasketballAffordanceFixer] Could not find MeshRenderer on '{visualsChildName}' child object.", this);
-            return;
-        }
 
         // Find the Highlight Interaction Affordance child object
         Transform affordanceTransform = transform.Find(affordanceChildName);
-        if (affordanceTransform == null)
-        {
-            // Try to find it by searching for MaterialPropertyBlockHelper
-            MaterialPropertyBlockHelper helper = GetComponentInChildren<MaterialPropertyBlockHelper>();
-            if (helper != null)
-            {
-                // Found it, assign the renderer
-                helper.rendererTarget = visualsRenderer;
-                Debug.Log($"[BasketballAffordanceFixer] Fixed MaterialPropertyBlockHelper renderer reference on {gameObject.name}.", this);
-            }
-            return;
-        }
+        MaterialPropertyBlockHelper helper = GetComponentInChildren<MaterialPropertyBlockHelper>();
+        helper.rendererTarget = visualsRenderer;
 
         // Get all MaterialPropertyBlockHelper components in the affordance child
         MaterialPropertyBlockHelper[] helpers = affordanceTransform.GetComponentsInChildren<MaterialPropertyBlockHelper>();
-        foreach (var helper in helpers)
+        foreach (var h in helpers)
         {
-            if (helper.rendererTarget == null)
+            if (h.rendererTarget == null)
             {
-                helper.rendererTarget = visualsRenderer;
-                Debug.Log($"[BasketballAffordanceFixer] Fixed MaterialPropertyBlockHelper renderer reference on {gameObject.name}.", this);
+                h.rendererTarget = visualsRenderer;
             }
         }
 
@@ -90,34 +70,32 @@ public class BasketballAffordanceFixer : MonoBehaviour
         // URP Lit doesn't have _RimColor and _RimPower properties
         // Do this for all MaterialPropertyBlockHelpers found (not just in affordanceTransform)
         MaterialPropertyBlockHelper[] allHelpers = GetComponentsInChildren<MaterialPropertyBlockHelper>(true);
-        foreach (var helper in allHelpers)
+        foreach (var h in allHelpers)
         {
             // Fix renderer reference if needed
-            if (helper.rendererTarget == null && visualsRenderer != null)
+            if (h.rendererTarget == null)
             {
-                helper.rendererTarget = visualsRenderer;
+                h.rendererTarget = visualsRenderer;
             }
 
             // Disable problematic receivers on this helper's GameObject
-            FloatMaterialPropertyAffordanceReceiver[] floatReceivers = helper.GetComponents<FloatMaterialPropertyAffordanceReceiver>();
+            FloatMaterialPropertyAffordanceReceiver[] floatReceivers = h.GetComponents<FloatMaterialPropertyAffordanceReceiver>();
             foreach (var receiver in floatReceivers)
             {
                 string propName = receiver.floatPropertyName;
                 if (propName == "_RimPower" || propName == "_RimColor")
                 {
                     receiver.enabled = false;
-                    Debug.Log($"[BasketballAffordanceFixer] Disabled FloatMaterialPropertyAffordanceReceiver using unsupported property '{propName}' on {helper.gameObject.name}.", this);
                 }
             }
 
-            ColorMaterialPropertyAffordanceReceiver[] colorReceivers = helper.GetComponents<ColorMaterialPropertyAffordanceReceiver>();
+            ColorMaterialPropertyAffordanceReceiver[] colorReceivers = h.GetComponents<ColorMaterialPropertyAffordanceReceiver>();
             foreach (var receiver in colorReceivers)
             {
                 string propName = receiver.colorPropertyName;
                 if (propName == "_RimColor" || propName == "_RimPower")
                 {
                     receiver.enabled = false;
-                    Debug.Log($"[BasketballAffordanceFixer] Disabled ColorMaterialPropertyAffordanceReceiver using unsupported property '{propName}' on {helper.gameObject.name}.", this);
                 }
             }
         }

@@ -14,10 +14,6 @@ public class HoopTrigger : MonoBehaviour
     [Tooltip("Reference to the HoopScorer component on the hoop root.")]
     public HoopScorer scorer;
 
-    [Header("Debug")]
-    [Tooltip("Enable to log all trigger events for this trigger.")]
-    public bool debugLogs = false;
-
     public enum HoopTriggerPart
     {
         Top,
@@ -27,44 +23,21 @@ public class HoopTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (debugLogs)
-        {
-            Debug.Log($"[HoopTrigger] {part} trigger ENTERED by: {other.gameObject.name} (Tag: {other.tag})", this);
-        }
-
-        if (scorer != null)
-        {
-            scorer.OnBallTriggerEnter(part, other);
-        }
-        else
-        {
-            if (debugLogs)
-                Debug.LogWarning($"[HoopTrigger] {part} trigger has no scorer reference assigned!", this);
-        }
+        scorer.OnBallTriggerEnter(part, other);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (debugLogs)
-        {
-            Debug.Log($"[HoopTrigger] {part} trigger EXITED by: {other.gameObject.name} (Tag: {other.tag})", this);
-        }
-
-        if (scorer != null)
-        {
-            scorer.OnBallTriggerExit(part, other);
-        }
+        scorer.OnBallTriggerExit(part, other);
     }
 
     private void OnValidate()
     {
         // Ensure the collider is set as a trigger
         Collider col = GetComponent<Collider>();
-        if (col != null && !col.isTrigger)
+        if (!col.isTrigger)
         {
-            Debug.LogWarning($"[HoopTrigger] Collider on {gameObject.name} should be a trigger. Setting isTrigger = true.", this);
             col.isTrigger = true;
         }
     }
 }
-

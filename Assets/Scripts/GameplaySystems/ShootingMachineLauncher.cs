@@ -7,10 +7,8 @@ using UnityEngine;
 public class ShootingMachineLauncher : MonoBehaviour
 {
     [Header("Launch Settings")]
-    [Tooltip("Transform where the ball should spawn and launch from (usually a child of Cannon).")]
     [SerializeField] private Transform launchPoint;
     
-    [Tooltip("Target transform to launch towards (usually PlayerShootingPoint). If not assigned, will search parent PlayArea.")]
     [SerializeField] private Transform targetPoint;
     
     [Tooltip("Launch angle in degrees (45 = typical arc, higher = steeper arc).")]
@@ -37,40 +35,11 @@ public class ShootingMachineLauncher : MonoBehaviour
     /// <param name="ball">The basketball GameObject to launch.</param>
     public void LaunchBall(GameObject ball)
     {
-        if (ball == null)
-        {
-            Debug.LogWarning("[ShootingMachineLauncher] Cannot launch null ball.", this);
-            return;
-        }
-
-        if (launchPoint == null)
-        {
-            Debug.LogError("[ShootingMachineLauncher] Launch point is not assigned!", this);
-            return;
-        }
-
-        if (targetPoint == null)
-        {
-            Debug.LogError("[ShootingMachineLauncher] Target point is not assigned!", this);
-            return;
-        }
-
         // Play ball machine sound effect from SoundManager (3D spatial audio)
         AudioClip ballMachineSound = SoundManager.GetBallMachine();
         float ballMachineVolume = SoundManager.GetBallMachineVolume();
-        if (ballMachineSound != null && m_AudioSource != null)
-        {
-            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, ballMachineVolume);
-            m_AudioSource.PlayOneShot(ballMachineSound, effectiveVolume);
-        }
-        else if (ballMachineSound == null)
-        {
-            Debug.LogWarning("[ShootingMachineLauncher] BallMachine sound not found in SoundManager!", this);
-        }
-        else if (ballMachineSound != null && m_AudioSource == null)
-        {
-            Debug.LogWarning("[ShootingMachineLauncher] BallMachine sound found but AudioSource is missing!", this);
-        }
+        float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, ballMachineVolume);
+        m_AudioSource.PlayOneShot(ballMachineSound, effectiveVolume);
 
         // Position ball at launch point
         ball.transform.position = launchPoint.position;
@@ -82,19 +51,12 @@ public class ShootingMachineLauncher : MonoBehaviour
 
         // Apply velocity to ball's rigidbody
         Rigidbody rb = ball.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
 #if UNITY_2023_3_OR_NEWER
-            rb.linearVelocity = launchVelocity;
+        rb.linearVelocity = launchVelocity;
 #else
-            rb.velocity = launchVelocity;
+        rb.velocity = launchVelocity;
 #endif
-            rb.angularVelocity = Vector3.zero; // Start with no spin
-        }
-        else
-        {
-            Debug.LogWarning("[ShootingMachineLauncher] Ball does not have a Rigidbody component!", this);
-        }
+        rb.angularVelocity = Vector3.zero; // Start with no spin
 
         if (drawDebugTrajectory)
         {
@@ -102,17 +64,9 @@ public class ShootingMachineLauncher : MonoBehaviour
         }
 
         // Track ball spawn count (canvas is now always visible)
-        if (m_PlayAreaManager != null)
+        if (m_PlayAreaManager.IsOwnedByLocalClient())
         {
-#if NORMCORE
-            if (m_PlayAreaManager.IsOwnedByLocalClient())
-            {
-                m_BallsSpawned++;
-            }
-#else
-            // Without NORMCORE, always increment (single player)
             m_BallsSpawned++;
-#endif
         }
     }
 
@@ -187,22 +141,19 @@ public class ShootingMachineLauncher : MonoBehaviour
         AutoFindReferences();
         
         // Canvas is always visible now
-        if (canvas != null)
-        {
-            canvas.SetActive(true);
-        }
+        canvas.SetActive(true);
         
         // Get or add AudioSource component for 3D spatial audio
         m_AudioSource = GetComponent<AudioSource>();
         if (m_AudioSource == null)
         {
             m_AudioSource = gameObject.AddComponent<AudioSource>();
-            m_AudioSource.playOnAwake = false;
-            m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
-            m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
-            m_AudioSource.minDistance = 1f;
-            m_AudioSource.maxDistance = 50f;
         }
+        m_AudioSource.playOnAwake = false;
+        m_AudioSource.spatialBlend = 1.0f; // 3D sound (full spatial blend)
+        m_AudioSource.rolloffMode = AudioRolloffMode.Logarithmic; // Realistic distance falloff
+        m_AudioSource.minDistance = 1f;
+        m_AudioSource.maxDistance = 50f;
         
         FindPlayAreaManager();
         SubscribeToGameStateChanges();
@@ -220,72 +171,17 @@ public class ShootingMachineLauncher : MonoBehaviour
 
     private void AutoFindReferences()
     {
-        // Auto-find launch point if not assigned
-        if (launchPoint == null)
-        {
-            Transform cannon = transform.Find("Cannon");
-            if (cannon != null)
-            {
-                launchPoint = cannon.Find("LaunchPosition");
-                if (launchPoint == null)
-                {
-                    // Try alternative names
-                    launchPoint = cannon.Find("Launch Point");
-                    if (launchPoint == null)
-                    {
-                        launchPoint = cannon.Find("LaunchPoint");
-                    }
-                }
-            }
-        }
-
-        // Auto-find target point if not assigned (search parent PlayArea)
-        if (targetPoint == null)
-        {
-            // Search up the hierarchy for PlayAreaManager
-            PlayAreaManager playArea = GetComponentInParent<PlayAreaManager>();
-            if (playArea != null)
-            {
-                targetPoint = playArea.GetPlayerShootingPoint();
-            }
-            else
-            {
-                // Try finding by name in parent
-                Transform parent = transform.parent;
-                while (parent != null)
-                {
-                    Transform found = parent.Find("PlayerShootingPoint");
-                    if (found == null)
-                    {
-                        found = parent.Find("Player Shooting Point");
-                    }
-                    if (found != null)
-                    {
-                        targetPoint = found;
-                        break;
-                    }
-                    parent = parent.parent;
-                }
-            }
-        }
     }
 
     /// <summary>
     /// Finds the PlayAreaManager in the parent hierarchy.
+    /// Note: Auto-finding is disabled. PlayAreaManager should be assigned via reference.
     /// </summary>
     private void FindPlayAreaManager()
     {
+        // Auto-finding disabled - PlayAreaManager should be assigned via reference
+        // For now, try GetComponentInParent as fallback but log error if not found
         m_PlayAreaManager = GetComponentInParent<PlayAreaManager>();
-        if (m_PlayAreaManager == null)
-        {
-            // Try searching up the hierarchy
-            Transform parent = transform.parent;
-            while (parent != null && m_PlayAreaManager == null)
-            {
-                m_PlayAreaManager = parent.GetComponent<PlayAreaManager>();
-                parent = parent.parent;
-            }
-        }
     }
 
     /// <summary>
@@ -293,10 +189,7 @@ public class ShootingMachineLauncher : MonoBehaviour
     /// </summary>
     private void SubscribeToGameStateChanges()
     {
-        if (m_PlayAreaManager != null)
-        {
-            m_PlayAreaManager.GameStateChanged += OnGameStateChanged;
-        }
+        m_PlayAreaManager.GameStateChanged += OnGameStateChanged;
     }
 
     /// <summary>
@@ -304,10 +197,7 @@ public class ShootingMachineLauncher : MonoBehaviour
     /// </summary>
     private void UnsubscribeFromGameStateChanges()
     {
-        if (m_PlayAreaManager != null)
-        {
-            m_PlayAreaManager.GameStateChanged -= OnGameStateChanged;
-        }
+        m_PlayAreaManager.GameStateChanged -= OnGameStateChanged;
     }
 
     /// <summary>
@@ -321,22 +211,10 @@ public class ShootingMachineLauncher : MonoBehaviour
         if (newState == PlayAreaManager.GameState.Playing)
         {
             // Reset ball spawn count when game starts (only for owner)
-            if (m_PlayAreaManager != null)
-            {
-#if NORMCORE
-                if (m_PlayAreaManager.IsOwnedByLocalClient())
-                {
-                    m_BallsSpawned = 0;
-                }
-#else
-                // Without NORMCORE, always reset (single player)
-                m_BallsSpawned = 0;
-#endif
-            }
+            if (m_PlayAreaManager.IsOwnedByLocalClient())
             {
                 m_BallsSpawned = 0;
             }
         }
     }
 }
-

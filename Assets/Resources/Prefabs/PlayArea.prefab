@@ -578,7 +578,6 @@ MonoBehaviour:
   ballTag: Ball
   minCollisionVelocity: 0.5
   wallHitCooldown: 0.1
-  debugLogs: 0
 --- !u!1 &1283209497178944667
 GameObject:
   m_ObjectHideFlags: 0
@@ -618,6 +617,7 @@ Transform:
   - {fileID: 5613429441936139119}
   - {fileID: 5126775529675398679}
   - {fileID: 1450521649723784507}
+  - {fileID: 7978120600480237721}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5307985670145211989
@@ -636,22 +636,9 @@ MonoBehaviour:
   playerShootingPoint: {fileID: 9042382103447993910}
   scoreManager: {fileID: 8416953991163508025}
   hoopPositionsManager: {fileID: 6102861585195264285}
-  endGameAction:
-    m_UseReference: 1
-    m_Action:
-      m_Name: End Game
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: 845831c2-d394-4970-823c-fff8caa3f20e
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
   basketballPrefab: {fileID: 7051872549721023133, guid: 4df4d20338be4b347bf0b04decb3280f, type: 3}
   currentGameState: 0
   disableMovementDuringGameplay: 1
-  debugLogs: 0
 --- !u!114 &117661162750089268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -841,7 +828,6 @@ MonoBehaviour:
   ballTag: Ball
   minCollisionVelocity: 0.5
   wallHitCooldown: 0.1
-  debugLogs: 0
 --- !u!1 &1762051551993159121
 GameObject:
   m_ObjectHideFlags: 0
@@ -1857,6 +1843,75 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3558055781613809405
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7978120600480237721}
+  - component: {fileID: 7569701643559020475}
+  m_Layer: 0
+  m_Name: PlayAreaInputManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7978120600480237721
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3558055781613809405}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1703287103673326616}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7569701643559020475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3558055781613809405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f6afc8d104ae1f43beddcdda1bcd11c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayAreaInputManager
+  spawnBallAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Spawn Ball
+      m_Type: 2
+      m_ExpectedControlType: 
+      m_Id: 3610cc84-8ca3-4b5c-9a46-82801dd4ecff
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  endGameAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: End Game
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: a5525234-3351-4412-a5f3-3dac5792ef3c
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  playAreaManager: {fileID: 5307985670145211989}
 --- !u!1 &3614516743319284044
 GameObject:
   m_ObjectHideFlags: 0
@@ -1910,7 +1965,6 @@ MonoBehaviour:
   numColumns: 5
   startCoordinate: {x: 1, y: 0}
   disablePositionChanges: 0
-  debugLogs: 0
   invalidCoordinates:
   - {x: 2, y: 0}
   - {x: 2, y: 1}
@@ -3282,7 +3336,6 @@ MonoBehaviour:
   ballTag: Ball
   minCollisionVelocity: 0.5
   wallHitCooldown: 0.1
-  debugLogs: 0
 --- !u!1 &4969582180768040069
 GameObject:
   m_ObjectHideFlags: 0
@@ -3678,13 +3731,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aab4eefc4a4fca549a514a897ab52b2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerShootingPointTrigger
-  startButtonAction:
+  startGameAction:
     m_UseReference: 1
     m_Action:
-      m_Name: Start Button
+      m_Name: Start Game
       m_Type: 0
       m_ExpectedControlType: 
-      m_Id: b5486dd0-32a7-442b-920b-5eb26e48b17b
+      m_Id: 5320f7ac-8c59-4b37-b295-8dbfaea3fbaf
       m_Processors: 
       m_Interactions: 
       m_SingletonActionBindings: []
@@ -3692,7 +3745,6 @@ MonoBehaviour:
     m_Reference: {fileID: 0}
   playAreaManager: {fileID: 5307985670145211989}
   playerTag: Player
-  debugLogs: 1
 --- !u!1 &5585936154975319104
 GameObject:
   m_ObjectHideFlags: 0
@@ -3895,7 +3947,6 @@ MonoBehaviour:
   moneyBallMultiplier: 2
   consecutiveScoresForOnFire: 3
   onFireMultiplier: 2
-  debugLogs: 0
 --- !u!114 &3686741761207261090
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4304,6 +4355,7 @@ MonoBehaviour:
   - {fileID: 6825120205703403554}
   hoopPositionsManager: {fileID: 6102861585195264285}
   playAreaManager: {fileID: 5307985670145211989}
+  scoreManager: {fileID: 8416953991163508025}
 --- !u!1 &6410219464302451335
 GameObject:
   m_ObjectHideFlags: 0
@@ -5169,7 +5221,6 @@ MonoBehaviour:
   playAreaManager: {fileID: 5307985670145211989}
   showDistance: 6
   playerTag: Player
-  debugLogs: 0
 --- !u!1 &8832474742741107823
 GameObject:
   m_ObjectHideFlags: 0
@@ -5729,6 +5780,10 @@ PrefabInstance:
       propertyPath: m_VersionIndex
       value: 4537
       objectReference: {fileID: 0}
+    - target: {fileID: 5316927848229035834, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
+      propertyPath: m_ScoreManager
+      value: 
+      objectReference: {fileID: 8416953991163508025}
     - target: {fileID: 8311765832967122105, guid: 40d8684f8b51e0c4aab6ed9dbef04ebb, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.784

@@ -17,10 +17,6 @@ public class BackboardCollisionTracker : MonoBehaviour
     [Tooltip("Cooldown time (seconds) between backboard hit sounds to prevent rapid, overlapping playback.")]
     [SerializeField] private float backboardHitCooldown = 0.1f;
 
-    [Header("Debug")]
-    [Tooltip("Enable to log backboard collision events.")]
-    [SerializeField] private bool debugLogs = false;
-
     private AudioSource m_AudioSource;
     private float m_LastBackboardHitTime = 0f;
 
@@ -43,48 +39,27 @@ public class BackboardCollisionTracker : MonoBehaviour
     {
         // Check if the colliding object is a ball
         GameObject ball = FindBallRoot(collision.gameObject);
-        if (ball != null)
+        
+        // Get collision velocity for sound volume scaling
+        float collisionVelocity = collision.relativeVelocity.magnitude;
+        
+        // Check if collision is strong enough and cooldown has passed
+        if (collisionVelocity >= minCollisionVelocity && Time.time - m_LastBackboardHitTime >= backboardHitCooldown)
         {
-            // Get collision velocity for sound volume scaling
-            float collisionVelocity = collision.relativeVelocity.magnitude;
+            // Play backboard hit sound effect from SoundManager
+            AudioClip backboardHitSound = SoundManager.GetBackboardHit();
+            float backboardHitVolume = SoundManager.GetBackboardHitVolume();
             
-            // Check if collision is strong enough and cooldown has passed
-            if (collisionVelocity >= minCollisionVelocity && Time.time - m_LastBackboardHitTime >= backboardHitCooldown)
-            {
-                // Play backboard hit sound effect from SoundManager
-                AudioClip backboardHitSound = SoundManager.GetBackboardHit();
-                float backboardHitVolume = SoundManager.GetBackboardHitVolume();
-                
-                if (backboardHitSound != null && m_AudioSource != null)
-                {
-                    // Adjust volume based on collision velocity (louder hits = louder sound)
-                    float velocityBasedVolume = Mathf.Clamp01(collisionVelocity / 10f); // Normalize to 0-1 range
-                    velocityBasedVolume = Mathf.Clamp(velocityBasedVolume, 0.3f, 1.0f); // Keep between 30% and 100%
-                    
-                    // Multiply by the configured backboard hit volume from SoundManager
-                    float finalVolume = velocityBasedVolume * backboardHitVolume;
-                    
-                    float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
-                    m_AudioSource.PlayOneShot(backboardHitSound, effectiveVolume);
-                    m_LastBackboardHitTime = Time.time;
-                    
-                    if (debugLogs)
-                    {
-                        Debug.Log($"[BackboardCollisionTracker] Playing backboard hit sound. Collision velocity: {collisionVelocity:F2} m/s, Final volume: {finalVolume:F2}", this);
-                    }
-                }
-                else if (backboardHitSound == null && debugLogs)
-                {
-                    Debug.LogWarning("[BackboardCollisionTracker] Backboard hit sound not found in SoundManager! Make sure SoundManager exists in scene and has Backboard Hit audio clip assigned.", this);
-                }
-            }
-            else if (collisionVelocity < minCollisionVelocity && debugLogs)
-            {
-                Debug.Log($"[BackboardCollisionTracker] Collision velocity too low ({collisionVelocity:F2} < {minCollisionVelocity}), not playing sound.", this);
-            }
+            // Adjust volume based on collision velocity (louder hits = louder sound)
+            float velocityBasedVolume = Mathf.Clamp01(collisionVelocity / 10f); // Normalize to 0-1 range
+            velocityBasedVolume = Mathf.Clamp(velocityBasedVolume, 0.3f, 1.0f); // Keep between 30% and 100%
             
-            if (debugLogs)
-                Debug.Log($"[BackboardCollisionTracker] Ball {ball.name} hit the backboard.", this);
+            // Multiply by the configured backboard hit volume from SoundManager
+            float finalVolume = velocityBasedVolume * backboardHitVolume;
+            
+            float effectiveVolume = SoundManager.GetEffectiveVolume(transform.position, finalVolume);
+            m_AudioSource.PlayOneShot(backboardHitSound, effectiveVolume);
+            m_LastBackboardHitTime = Time.time;
         }
     }
 
@@ -112,11 +87,10 @@ public class BackboardCollisionTracker : MonoBehaviour
     {
         // Ensure collider is NOT a trigger (we want collision, not trigger)
         Collider col = GetComponent<Collider>();
-        if (col != null && col.isTrigger)
+        if (col.isTrigger)
         {
             Debug.LogWarning("[BackboardCollisionTracker] Backboard collider should not be a trigger. Setting isTrigger = false.", this);
             col.isTrigger = false;
         }
     }
 }
-

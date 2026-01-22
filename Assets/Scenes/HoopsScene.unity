@@ -998,6 +998,20 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8259524632637961923, guid: 27024f5809f4a4347b9cd7f26a1bdf93, type: 3}
   m_PrefabInstance: {fileID: 5896823366073464641}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &155906400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc1515ab76e54f068e2f2207940fab32, type: 3}
+  m_Name: XRI Right/StartGame
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
+  m_Asset: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  m_ActionId: 29d23700-2cd1-4256-82a1-f1ec03813b95
 --- !u!1001 &164802248
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1836,20 +1850,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 273063217}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &314581691
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fc1515ab76e54f068e2f2207940fab32, type: 3}
-  m_Name: XRI Right/SpawnBall
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
-  m_Asset: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
-  m_ActionId: c5dbdf2b-493b-4fed-8891-679f5efcd8e0
 --- !u!1 &323361796
 GameObject:
   m_ObjectHideFlags: 0
@@ -2885,63 +2885,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5716294538180104762, guid: aeb3f06708c47dc4c89a28b9fba5a3c0, type: 3}
   m_PrefabInstance: {fileID: 576210668}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &586049562
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 586049564}
-  - component: {fileID: 586049563}
-  m_Layer: 0
-  m_Name: BallSpawnManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &586049563
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586049562}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 068e994c6946aa249a59128f68e973ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BallSpawnManager
-  spawnBallAction:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Spawn Ball
-      m_Type: 1
-      m_ExpectedControlType: Button
-      m_Id: f3af3acf-1579-4151-be94-6b1dbb937dd8
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 314581691}
-  debugLogs: 0
---- !u!4 &586049564
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586049562}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.328, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &591694657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5834,12 +5777,24 @@ PrefabInstance:
       objectReference: {fileID: 85033002}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4777
+      value: 4837
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 85033002}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: endGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 1646630467}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: spawnBallAction.m_Reference
+      value: 
+      objectReference: {fileID: 1275687577}
+    - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: startGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 155906400}
     - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: startButtonAction.m_Reference
       value: 
@@ -7095,12 +7050,24 @@ PrefabInstance:
       objectReference: {fileID: 808118233}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4777
+      value: 4837
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 808118233}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: endGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 1646630467}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: spawnBallAction.m_Reference
+      value: 
+      objectReference: {fileID: 1275687577}
+    - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: startGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 155906400}
     - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: startButtonAction.m_Reference
       value: 
@@ -7558,6 +7525,20 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6191395158302528572, guid: 61f455b315dcd4b45b9f31b5f5701bdc, type: 3}
   m_PrefabInstance: {fileID: 1253352211}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1275687577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc1515ab76e54f068e2f2207940fab32, type: 3}
+  m_Name: XRI Right/SpawnBall
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
+  m_Asset: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  m_ActionId: c5dbdf2b-493b-4fed-8891-679f5efcd8e0
 --- !u!1001 &1296191885
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10483,6 +10464,20 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4180439062283223616, guid: 011878d3d5c4693418b2cc7f5645cab3, type: 3}
   m_PrefabInstance: {fileID: 1629503507}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1646630467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc1515ab76e54f068e2f2207940fab32, type: 3}
+  m_Name: XRI Right/EndGame
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
+  m_Asset: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  m_ActionId: 11fe0eea-3637-45c2-8661-dc10363589ed
 --- !u!1001 &1669379162
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11181,12 +11176,24 @@ PrefabInstance:
       objectReference: {fileID: 1395461931}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4777
+      value: 4837
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1395461931}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: endGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 1646630467}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: spawnBallAction.m_Reference
+      value: 
+      objectReference: {fileID: 1275687577}
+    - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: startGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 155906400}
     - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: startButtonAction.m_Reference
       value: 
@@ -14053,12 +14060,24 @@ PrefabInstance:
       objectReference: {fileID: 1900787000}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4777
+      value: 4837
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1900787000}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: endGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 1646630467}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: spawnBallAction.m_Reference
+      value: 
+      objectReference: {fileID: 1275687577}
+    - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: startGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 155906400}
     - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: startButtonAction.m_Reference
       value: 
@@ -14407,7 +14426,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LifeHeartUI
   amountText: {fileID: 2010359606}
   lifeHeartAnimator: {fileID: 2134328433}
-  debugLogs: 0
 --- !u!1001 &2140020434
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18596,7 +18614,6 @@ MonoBehaviour:
   showDebugVisual: 1
   debugColor: {r: 0, g: 1, b: 0, a: 1}
   lineWidth: 0.01
-  debugLogs: 1
   autoSetup: 1
 --- !u!1001 &6140292491386433119
 PrefabInstance:
@@ -19402,10 +19419,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2409803128147558430, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2409803128147558430, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_LocalPosition.y
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 2409803128147558430, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: m_LocalPosition.z
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3195724569000625860, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
@@ -19446,12 +19467,24 @@ PrefabInstance:
       objectReference: {fileID: 1440470213}
     - target: {fileID: 7093555716099288309, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_VersionIndex
-      value: 4789
+      value: 4849
       objectReference: {fileID: 0}
     - target: {fileID: 7288649254514137764, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 1440470213}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: endGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 1646630467}
+    - target: {fileID: 7569701643559020475, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: spawnBallAction.m_Reference
+      value: 
+      objectReference: {fileID: 1275687577}
+    - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
+      propertyPath: startGameAction.m_Reference
+      value: 
+      objectReference: {fileID: 155906400}
     - target: {fileID: 7590868104589417039, guid: 44f252015aa9d744ab0258ed6cd75a9d, type: 3}
       propertyPath: startButtonAction.m_Reference
       value: 
@@ -19859,7 +19892,6 @@ MonoBehaviour:
   showDebugVisual: 0
   debugColor: {r: 0, g: 1, b: 0, a: 1}
   lineWidth: 0.002
-  debugLogs: 0
   autoSetup: 1
 --- !u!1 &7917674759014681882
 GameObject:
@@ -19920,7 +19952,6 @@ MonoBehaviour:
   showDebugVisual: 0
   debugColor: {r: 0, g: 1, b: 0, a: 1}
   lineWidth: 0.002
-  debugLogs: 0
   autoSetup: 1
 --- !u!1 &7917674759071068600
 GameObject:
@@ -20623,7 +20654,7 @@ GameObject:
   - component: {fileID: 2898801624799447179}
   m_Layer: 2
   m_Name: XR Origin Hands (XR Rig)
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -20667,7 +20698,6 @@ MonoBehaviour:
   showDebugVisual: 1
   debugColor: {r: 0, g: 1, b: 0, a: 1}
   lineWidth: 0.01
-  debugLogs: 1
   autoSetup: 1
 --- !u!114 &9059786328080561478
 MonoBehaviour:
@@ -20714,7 +20744,6 @@ SceneRoots:
   - {fileID: 610590593}
   - {fileID: 1825945902}
   - {fileID: 1601602806}
-  - {fileID: 586049564}
   - {fileID: 7398093526176053147}
   - {fileID: 2101415445}
   - {fileID: 998157148}

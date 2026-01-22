@@ -10,10 +10,10 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 [RequireComponent(typeof(XRGrabInteractable))]
 public class BasketballTrail : MonoBehaviour
 {
-    [Header("Trail Settings")]
-    [Tooltip("The TrailRenderer component for the trail. If not assigned, will search for one or create one.")]
-    [SerializeField] private TrailRenderer trailRenderer;
     
+    private TrailRenderer trailRenderer;
+    
+    [Header("Trail Settings")]
     [Tooltip("How long (in seconds) the trail stays visible. Longer = longer trail behind the ball.")]
     [SerializeField] private float trailTime = 2f;
     
@@ -36,10 +36,6 @@ public class BasketballTrail : MonoBehaviour
     [Tooltip("Material for the trail. If not assigned, will create a default material.")]
     [SerializeField] private Material trailMaterial;
 
-    [Header("Auto-Setup")]
-    [Tooltip("If true, automatically creates and configures a TrailRenderer if one isn't assigned.")]
-    [SerializeField] private bool autoCreateTrail = true;
-
     private XRGrabInteractable m_GrabInteractable;
     private Rigidbody m_Rigidbody;
     private bool m_IsGrabbed;
@@ -51,54 +47,33 @@ public class BasketballTrail : MonoBehaviour
         m_GrabInteractable = GetComponent<XRGrabInteractable>();
         m_Rigidbody = GetComponent<Rigidbody>();
         
-        // Find or create trail renderer
-        if (trailRenderer == null)
-        {
-            trailRenderer = GetComponentInChildren<TrailRenderer>();
-        }
+        CreateTrailRenderer();
         
-        if (trailRenderer == null && autoCreateTrail)
-        {
-            CreateTrailRenderer();
-        }
-        
-        if (trailRenderer != null)
-        {
-            ConfigureTrailRenderer();
-        }
+        ConfigureTrailRenderer();
     }
 
     private void OnEnable()
     {
-        if (m_GrabInteractable != null)
-        {
-            m_GrabInteractable.selectEntered.AddListener(OnGrab);
-            m_GrabInteractable.selectExited.AddListener(OnRelease);
-        }
+        m_GrabInteractable.selectEntered.AddListener(OnGrab);
+        m_GrabInteractable.selectExited.AddListener(OnRelease);
     }
 
     private void OnDisable()
     {
-        if (m_GrabInteractable != null)
-        {
-            m_GrabInteractable.selectEntered.RemoveListener(OnGrab);
-            m_GrabInteractable.selectExited.RemoveListener(OnRelease);
-        }
+        m_GrabInteractable.selectEntered.RemoveListener(OnGrab);
+        m_GrabInteractable.selectExited.RemoveListener(OnRelease);
         
         // Clear trail when disabled
-        if (trailRenderer != null)
-        {
-            trailRenderer.enabled = false;
-            trailRenderer.Clear();
-        }
+        trailRenderer.enabled = false;
+        trailRenderer.Clear();
     }
 
     private void Update()
     {
-        if (!m_IsGrabbed && m_TrailActive && trailRenderer != null)
+        if (!m_IsGrabbed && m_TrailActive)
         {
             // Check if ball is still moving
-            float velocity = m_Rigidbody != null ? m_Rigidbody.linearVelocity.magnitude : 0f;
+            float velocity = m_Rigidbody.linearVelocity.magnitude;
             
             if (velocity < minVelocityForTrail)
             {
@@ -120,11 +95,8 @@ public class BasketballTrail : MonoBehaviour
     private void OnGrab(SelectEnterEventArgs args)
     {
         m_IsGrabbed = true;
-        if (trailRenderer != null)
-        {
-            trailRenderer.enabled = false;
-            trailRenderer.Clear(); // Clear the trail immediately when grabbed
-        }
+        trailRenderer.enabled = false;
+        trailRenderer.Clear(); // Clear the trail immediately when grabbed
         m_TrailActive = false;
     }
 
@@ -136,9 +108,6 @@ public class BasketballTrail : MonoBehaviour
 
     private void StartTrail()
     {
-        if (trailRenderer == null)
-            return;
-        
         m_TrailActive = true;
         m_TimeSinceLastMovement = 0f;
         trailRenderer.enabled = true;
@@ -147,9 +116,6 @@ public class BasketballTrail : MonoBehaviour
 
     private void StopTrail()
     {
-        if (trailRenderer == null)
-            return;
-        
         m_TrailActive = false;
         // Don't disable immediately - let the trail fade out naturally
         // It will be cleared when grabbed
@@ -157,6 +123,7 @@ public class BasketballTrail : MonoBehaviour
 
     private void CreateTrailRenderer()
     {
+        Debug.Log("Creating trailRenderer");
         // Create a child GameObject for the trail renderer
         GameObject trailObj = new GameObject("BallTrail");
         trailObj.transform.SetParent(transform);
@@ -172,7 +139,7 @@ public class BasketballTrail : MonoBehaviour
     {
         if (trailRenderer == null)
             return;
-        
+            
         // Basic trail settings
         trailRenderer.time = trailTime;
         trailRenderer.startWidth = startWidth;
@@ -220,10 +187,7 @@ public class BasketballTrail : MonoBehaviour
     private void OnValidate()
     {
         // Update trail renderer settings when values change in editor
-        if (trailRenderer != null)
-        {
-            ConfigureTrailRenderer();
-        }
+        ConfigureTrailRenderer();
     }
 
     /// <summary>

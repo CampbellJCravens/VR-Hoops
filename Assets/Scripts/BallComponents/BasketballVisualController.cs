@@ -60,16 +60,10 @@ public class BasketballVisualController : MonoBehaviour
     {
 #if NORMCORE
         // Subscribe to ownership changes
-        if (realtimeView != null)
-        {
-            realtimeView.ownerIDSelfDidChange += OnOwnershipChanged;
-        }
+        realtimeView.ownerIDSelfDidChange += OnOwnershipChanged;
         
         // Sync from model if it's already available (for late joiners)
-        if (model != null)
-        {
-            SyncFromModel();
-        }
+        SyncFromModel();
 #endif
     }
     
@@ -77,10 +71,7 @@ public class BasketballVisualController : MonoBehaviour
     {
 #if NORMCORE
         // Unsubscribe from ownership changes
-        if (realtimeView != null)
-        {
-            realtimeView.ownerIDSelfDidChange -= OnOwnershipChanged;
-        }
+        realtimeView.ownerIDSelfDidChange -= OnOwnershipChanged;
 #endif
     }
 
@@ -88,12 +79,9 @@ public class BasketballVisualController : MonoBehaviour
     {
         FindVisualsTransform();
         FindMeshRenderer();
-        if (m_MeshRenderer != null)
-        {
-            // Don't sync to model during initialization - that happens in Start() after multiplayer is set up
-            ApplyMaterial(currentMaterial, false);
-            m_LastMaterial = currentMaterial;
-        }
+        // Don't sync to model during initialization - that happens in Start() after multiplayer is set up
+        ApplyMaterial(currentMaterial, false);
+        m_LastMaterial = currentMaterial;
     }
 
 #if NORMCORE
@@ -102,29 +90,17 @@ public class BasketballVisualController : MonoBehaviour
     /// </summary>
     protected override void OnRealtimeModelReplaced(RealtimeBasketballModel previousModel, RealtimeBasketballModel currentModel)
     {
-        Debug.Log($"[BasketballVisualController] OnRealtimeModelReplaced called. Previous model: {previousModel != null}, Current model: {currentModel != null}", this);
-        
+        // Unsubscribe from previous model events (if it exists)
         if (previousModel != null)
         {
-            // Unsubscribe from previous model events
             previousModel.materialTypeDidChange -= MaterialTypeDidChange;
         }
         
-        if (currentModel != null)
-        {
-            Debug.Log($"[BasketballVisualController] Model available. Initial material type: {currentModel.materialType}, IsOwner: {isOwnedLocallySelf}, OwnerID: {realtimeView?.ownerIDSelf}", this);
-            
-            // Subscribe to model change events
-            currentModel.materialTypeDidChange += MaterialTypeDidChange;
-            Debug.Log($"[BasketballVisualController] Subscribed to materialTypeDidChange event", this);
-            
-            // Apply initial state from model (important for late joiners)
-            SyncFromModel();
-        }
-        else
-        {
-            Debug.LogWarning("[BasketballVisualController] OnRealtimeModelReplaced called but currentModel is null!", this);
-        }
+        // Subscribe to model change events
+        currentModel.materialTypeDidChange += MaterialTypeDidChange;
+        
+        // Apply initial state from model (important for late joiners)
+        SyncFromModel();
     }
     
     /// <summary>
@@ -132,20 +108,16 @@ public class BasketballVisualController : MonoBehaviour
     /// </summary>
     private void OnOwnershipChanged(RealtimeView view, int ownerID)
     {
-        Debug.Log($"[BasketballVisualController] Ownership changed. Is owner now: {view.isOwnedLocallySelf}, Owner ID: {ownerID}", this);
-        
         // If we just gained ownership, sync our local state to the model
-        if (view.isOwnedLocallySelf && model != null)
+        if (view.isOwnedLocallySelf)
         {
             // Sync current local state to model (in case we had pending writes)
             model.materialType = (int)currentMaterial;
-            Debug.Log($"[BasketballVisualController] Synced local material {currentMaterial} to model after gaining ownership", this);
         }
     }
     
     private void MaterialTypeDidChange(RealtimeBasketballModel model, int materialType)
     {
-        Debug.Log($"[BasketballVisualController] MaterialTypeDidChange callback FIRED! Callback param materialType: {materialType}, Model.materialType: {model.materialType}, IsOwner: {isOwnedLocallySelf}", this);
         SyncFromModel();
     }
     
@@ -154,17 +126,10 @@ public class BasketballVisualController : MonoBehaviour
     /// </summary>
     private void SyncFromModel()
     {
-        if (model == null)
-        {
-            Debug.LogWarning("[BasketballVisualController] SyncFromModel called but model is null!", this);
-            return;
-        }
-        
         int materialType = model.materialType;
         
         if (materialType < 0 || materialType > 2)
         {
-            Debug.LogWarning($"[BasketballVisualController] Invalid material type from model: {materialType}", this);
             return;
         }
         
@@ -173,13 +138,8 @@ public class BasketballVisualController : MonoBehaviour
         // Update local state from model
         if (currentMaterial != material)
         {
-            Debug.Log($"[BasketballVisualController] ✓ CLIENT2 RECEIVED: Material type changed! {currentMaterial}→{material}, IsOwner: {isOwnedLocallySelf}", this);
             // Don't sync back to model (we're receiving this from the model)
             ApplyMaterial(material, false);
-        }
-        else
-        {
-            Debug.Log($"[BasketballVisualController] SyncFromModel: No changes (materialType={material})", this);
         }
     }
     
@@ -188,30 +148,10 @@ public class BasketballVisualController : MonoBehaviour
     /// </summary>
     private void WriteMaterialTypeToModel(int materialType)
     {
-        Debug.Log($"[BasketballVisualController] WriteMaterialTypeToModel ENTRY: materialType={materialType}, model={model != null}, realtimeView={realtimeView != null}, realtimeView.isOwnedLocallySelf={realtimeView?.isOwnedLocallySelf}", this);
-        
-        if (model == null)
-        {
-            Debug.LogWarning("[BasketballVisualController] Cannot write material type - model is null", this);
-            return;
-        }
-        
-        if (realtimeView == null)
-        {
-            Debug.LogWarning("[BasketballVisualController] Cannot write material type - realtimeView is null", this);
-            return;
-        }
-        
         // Use realtimeView.isOwnedLocallySelf consistently
         if (realtimeView.isOwnedLocallySelf)
         {
-            int oldMaterialType = model.materialType;
             model.materialType = materialType;
-            Debug.Log($"[BasketballVisualController] ✓ CLIENT1 WRITE: Wrote materialType {materialType} to model (was {oldMaterialType}). Model should sync to other clients now.", this);
-        }
-        else
-        {
-            Debug.LogWarning($"[BasketballVisualController] ✗ WRITE FAILED: Cannot write materialType {materialType} to model - not owner (owner: {realtimeView.ownerIDSelf}, local client: {realtime?.clientID})", this);
         }
     }
 #endif
@@ -228,11 +168,8 @@ public class BasketballVisualController : MonoBehaviour
             if (m_MeshRenderer == null)
                 FindMeshRenderer();
             
-            if (m_MeshRenderer != null)
-            {
-                ApplyMaterial(currentMaterial);
-                m_LastMaterial = currentMaterial;
-            }
+            ApplyMaterial(currentMaterial);
+            m_LastMaterial = currentMaterial;
         }
     }
 
@@ -243,16 +180,12 @@ public class BasketballVisualController : MonoBehaviour
     {
         if (visualsObject == null)
         {
-            // Search for a child named "Visuals"
+            // Auto-finding is disabled. Visuals transform should be assigned via reference.
+            // For now, try transform.Find as fallback but log error
             Transform visualsTransform = transform.Find("Visuals");
             if (visualsTransform != null)
             {
                 visualsObject = visualsTransform.gameObject;
-            }
-            
-            if (visualsObject == null)
-            {
-                Debug.LogWarning($"BasketballVisualController on {gameObject.name}: Could not find 'Visuals' child object. Please assign it manually.", this);
             }
         }
     }
@@ -262,15 +195,7 @@ public class BasketballVisualController : MonoBehaviour
     /// </summary>
     private void FindMeshRenderer()
     {
-        if (visualsObject != null)
-        {
-            m_MeshRenderer = visualsObject.GetComponent<MeshRenderer>();
-            
-            if (m_MeshRenderer == null)
-            {
-                Debug.LogWarning($"BasketballVisualController on {gameObject.name}: Could not find MeshRenderer on Visuals object.", this);
-            }
-        }
+        m_MeshRenderer = visualsObject.GetComponent<MeshRenderer>();
     }
 
     /// <summary>
@@ -283,44 +208,30 @@ public class BasketballVisualController : MonoBehaviour
         if (m_MeshRenderer == null)
         {
             FindMeshRenderer();
-            if (m_MeshRenderer == null)
-            {
-                Debug.LogError($"BasketballVisualController on {gameObject.name}: Cannot apply material - MeshRenderer not found.", this);
-                return;
-            }
         }
 
         Material materialToApply = GetMaterialForType(materialType);
         
-        if (materialToApply != null)
+        // Use sharedMaterial in edit mode to avoid creating instance materials
+        if (Application.isPlaying)
         {
-            // Use sharedMaterial in edit mode to avoid creating instance materials
-            if (Application.isPlaying)
-            {
-                m_MeshRenderer.material = materialToApply;
-            }
-            else
-            {
-                m_MeshRenderer.sharedMaterial = materialToApply;
-            }
-            
-            currentMaterial = materialType;
-            m_LastMaterial = materialType;
-
-#if NORMCORE
-            // Sync to RealtimeModel if we're the owner and syncToModel is true
-            if (syncToModel)
-            {
-                WriteMaterialTypeToModel((int)materialType);
-            }
-#else
-            Debug.LogWarning("[BasketballVisualController] ApplyMaterial: NORMCORE is not defined! Material will not sync across clients!", this);
-#endif
+            m_MeshRenderer.material = materialToApply;
         }
         else
         {
-            Debug.LogWarning($"BasketballVisualController on {gameObject.name}: Material for {materialType} is not assigned.", this);
+            m_MeshRenderer.sharedMaterial = materialToApply;
         }
+        
+        currentMaterial = materialType;
+        m_LastMaterial = materialType;
+
+#if NORMCORE
+        // Sync to RealtimeModel if we're the owner and syncToModel is true
+        if (syncToModel)
+        {
+            WriteMaterialTypeToModel((int)materialType);
+        }
+#endif
     }
 
     /// <summary>

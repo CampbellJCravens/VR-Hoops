@@ -36,8 +36,6 @@ public class HandGrabHitbox : MonoBehaviour
     [Tooltip("Line width for the debug visualization.")]
     [SerializeField] private float lineWidth = 0.05f; // Increased default for better visibility
     
-    [Tooltip("Enable debug logging to help troubleshoot visualization issues.")]
-    [SerializeField] private bool debugLogs = false;
     
     [Header("Auto-Setup")]
     [Tooltip("If true, automatically configures components on Awake. If false, you must configure manually.")]
@@ -50,20 +48,12 @@ public class HandGrabHitbox : MonoBehaviour
     
     private void Awake()
     {
-        // Always log that script is running (helps diagnose if script is attached)
-        Debug.Log($"[HandGrabHitbox] Awake() called on {gameObject.name}. Active: {gameObject.activeSelf}, ActiveInHierarchy: {gameObject.activeInHierarchy}", this);
-        
         if (autoSetup)
         {
             SetupComponents();
         }
         
         SetupDebugVisual();
-        
-        if (debugLogs)
-        {
-            Debug.Log($"[HandGrabHitbox] Awake() complete on {gameObject.name}. showDebugVisual: {showDebugVisual}, LineRenderer: {(m_LineRenderer != null ? "EXISTS" : "NULL")}", this);
-        }
     }
     
     /// <summary>
@@ -76,7 +66,6 @@ public class HandGrabHitbox : MonoBehaviour
         if (m_DirectInteractor == null)
         {
             m_DirectInteractor = gameObject.AddComponent<XRDirectInteractor>();
-            Debug.Log($"[HandGrabHitbox] Added XR Direct Interactor to {gameObject.name}.", this);
         }
         
         // Configure XR Direct Interactor
@@ -87,7 +76,6 @@ public class HandGrabHitbox : MonoBehaviour
         if (m_BoxCollider == null)
         {
             m_BoxCollider = gameObject.AddComponent<BoxCollider>();
-            Debug.Log($"[HandGrabHitbox] Added Box Collider to {gameObject.name}.", this);
         }
         
         // Configure Box Collider
@@ -108,7 +96,6 @@ public class HandGrabHitbox : MonoBehaviour
         if (m_LineRenderer == null)
         {
             m_LineRenderer = gameObject.AddComponent<LineRenderer>();
-            Debug.Log($"[HandGrabHitbox] Added LineRenderer to {gameObject.name}.", this);
         }
         
         // Create a simple unlit material that works in both Built-in and URP
@@ -127,7 +114,6 @@ public class HandGrabHitbox : MonoBehaviour
             shader = Shader.Find(shaderName);
             if (shader != null)
             {
-                Debug.Log($"[HandGrabHitbox] Found shader: {shaderName} for LineRenderer on {gameObject.name}.", this);
                 break;
             }
         }
@@ -137,11 +123,6 @@ public class HandGrabHitbox : MonoBehaviour
             Material lineMaterial = new Material(shader);
             lineMaterial.color = debugColor;
             m_LineRenderer.material = lineMaterial;
-            Debug.Log($"[HandGrabHitbox] Created LineRenderer material with shader: {shader.name}, Color: {debugColor}", this);
-        }
-        else
-        {
-            Debug.LogError($"[HandGrabHitbox] Could not find ANY suitable shader for LineRenderer on {gameObject.name}! Visualization will not work.", this);
         }
         
         // Configure LineRenderer with more visible defaults
@@ -158,8 +139,6 @@ public class HandGrabHitbox : MonoBehaviour
         
         // Initially hide if debug is disabled
         m_LineRenderer.enabled = showDebugVisual;
-        
-        Debug.Log($"[HandGrabHitbox] LineRenderer setup complete on {gameObject.name}. Enabled: {showDebugVisual}, Width: {m_LineRenderer.startWidth}, Color: {debugColor}, Material: {(m_LineRenderer.material != null ? m_LineRenderer.material.name : "NULL")}", this);
     }
     
     private void Update()
@@ -167,34 +146,11 @@ public class HandGrabHitbox : MonoBehaviour
         // Update debug visualization if enabled
         if (showDebugVisual)
         {
-            if (m_LineRenderer != null)
-            {
-                UpdateDebugVisual();
-            }
-            else
-            {
-                Debug.LogWarning($"[HandGrabHitbox] showDebugVisual is true but LineRenderer is NULL on {gameObject.name}!", this);
-            }
+            UpdateDebugVisual();
         }
-        else if (m_LineRenderer != null)
+        else
         {
             m_LineRenderer.enabled = false;
-        }
-        
-        // Log state periodically for debugging
-        if (debugLogs && Time.frameCount % 300 == 0) // Every 5 seconds at 60fps
-        {
-            if (showDebugVisual)
-            {
-                if (m_LineRenderer != null)
-                {
-                    Debug.Log($"[HandGrabHitbox] Debug visual active on {gameObject.name}. LineRenderer enabled: {m_LineRenderer.enabled}, Visible: {m_LineRenderer.isVisible}, Material: {(m_LineRenderer.material != null ? m_LineRenderer.material.name : "NULL")}, Positions: {m_LineRenderer.positionCount}", this);
-                }
-                else
-                {
-                    Debug.LogWarning($"[HandGrabHitbox] showDebugVisual is true but LineRenderer is NULL on {gameObject.name}!", this);
-                }
-            }
         }
     }
     
@@ -203,20 +159,6 @@ public class HandGrabHitbox : MonoBehaviour
     /// </summary>
     private void UpdateDebugVisual()
     {
-        if (m_BoxCollider == null)
-        {
-            if (debugLogs)
-                Debug.LogWarning($"[HandGrabHitbox] BoxCollider is null on {gameObject.name}! Cannot draw debug visual.", this);
-            return;
-        }
-        
-        if (m_LineRenderer == null)
-        {
-            if (debugLogs)
-                Debug.LogWarning($"[HandGrabHitbox] LineRenderer is null on {gameObject.name}! Cannot draw debug visual.", this);
-            return;
-        }
-        
         m_LineRenderer.enabled = true;
         
         // Get box bounds
@@ -264,14 +206,8 @@ public class HandGrabHitbox : MonoBehaviour
         // Verify the LineRenderer is actually set up correctly
         if (m_LineRenderer.positionCount != positions.Length)
         {
-            Debug.LogWarning($"[HandGrabHitbox] Position count mismatch! Expected {positions.Length}, got {m_LineRenderer.positionCount} on {gameObject.name}.", this);
             m_LineRenderer.positionCount = positions.Length;
             m_LineRenderer.SetPositions(positions);
-        }
-        
-        if (debugLogs && Time.frameCount % 300 == 0) // Log every 5 seconds to avoid spam
-        {
-            Debug.Log($"[HandGrabHitbox] Updated debug visual on {gameObject.name}. LineRenderer enabled: {m_LineRenderer.enabled}, Visible: {m_LineRenderer.isVisible}, Positions: {m_LineRenderer.positionCount}, Width: {m_LineRenderer.startWidth}, Material: {(m_LineRenderer.material != null ? m_LineRenderer.material.name : "NULL")}", this);
         }
     }
     
@@ -281,10 +217,7 @@ public class HandGrabHitbox : MonoBehaviour
     public void ToggleDebugVisual()
     {
         showDebugVisual = !showDebugVisual;
-        if (m_LineRenderer != null)
-        {
-            m_LineRenderer.enabled = showDebugVisual;
-        }
+        m_LineRenderer.enabled = showDebugVisual;
     }
     
     /// <summary>
@@ -294,10 +227,7 @@ public class HandGrabHitbox : MonoBehaviour
     public void SetDebugVisualVisible(bool visible)
     {
         showDebugVisual = visible;
-        if (m_LineRenderer != null)
-        {
-            m_LineRenderer.enabled = showDebugVisual;
-        }
+        m_LineRenderer.enabled = showDebugVisual;
     }
     
     /// <summary>
@@ -308,11 +238,8 @@ public class HandGrabHitbox : MonoBehaviour
         hitboxSize = newSize;
         hitboxCenter = newCenter;
         
-        if (m_BoxCollider != null)
-        {
-            m_BoxCollider.size = hitboxSize;
-            m_BoxCollider.center = hitboxCenter;
-        }
+        m_BoxCollider.size = hitboxSize;
+        m_BoxCollider.center = hitboxCenter;
     }
     
     /// <summary>
@@ -357,10 +284,7 @@ public class HandGrabHitbox : MonoBehaviour
             m_LineRenderer.endWidth = lineWidth;
             
             // Update material color if it exists
-            if (m_LineRenderer.material != null)
-            {
-                m_LineRenderer.material.color = debugColor;
-            }
+            m_LineRenderer.material.color = debugColor;
         }
         
         // Update handedness if direct interactor exists
@@ -424,23 +348,8 @@ public class HandGrabHitbox : MonoBehaviour
             SetupDebugVisual();
         }
         
-        if (m_LineRenderer != null)
-        {
-            m_LineRenderer.enabled = true;
-            UpdateDebugVisual();
-            
-            Debug.Log($"[HandGrabHitbox] FORCED debug visual enabled on {gameObject.name}. " +
-                $"LineRenderer enabled: {m_LineRenderer.enabled}, " +
-                $"Material: {(m_LineRenderer.material != null ? m_LineRenderer.material.name : "NULL")}, " +
-                $"Width: {m_LineRenderer.startWidth}, " +
-                $"Color: {m_LineRenderer.startColor}, " +
-                $"Positions: {m_LineRenderer.positionCount}, " +
-                $"Visible: {m_LineRenderer.isVisible}", this);
-        }
-        else
-        {
-            Debug.LogError($"[HandGrabHitbox] Could not force enable debug visual - LineRenderer is NULL on {gameObject.name}!", this);
-        }
+        m_LineRenderer.enabled = true;
+        UpdateDebugVisual();
     }
 }
 

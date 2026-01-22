@@ -19,11 +19,14 @@ public class ShotCounterManager : MonoBehaviour
     [SerializeField] private Collider[] triggerColliders;
 
     [Header("References")]
-    [Tooltip("HoopPositionsManager to notify when shot threshold is reached. If not assigned, will search parent.")]
+    [Tooltip("HoopPositionsManager to notify when shot threshold is reached.")]
     [SerializeField] private HoopPositionsManager hoopPositionsManager;
     
-    [Tooltip("PlayAreaManager that owns this shot counter. If not assigned, will search parent.")]
+    [Tooltip("PlayAreaManager that owns this shot counter.")]
     [SerializeField] private PlayAreaManager playAreaManager;
+    
+    [Tooltip("ScoreManager for registering misses and life loss.")]
+    [SerializeField] private ScoreManager scoreManager;
     
     // Track which balls have already been counted to prevent double counting
     private HashSet<GameObject> m_CountedBalls = new HashSet<GameObject>();
@@ -33,37 +36,12 @@ public class ShotCounterManager : MonoBehaviour
 
     private void Awake()
     {
-        // Validate trigger colliders
-        if (triggerColliders == null || triggerColliders.Length == 0)
+        // Ensure all assigned colliders are triggers
+        foreach (Collider col in triggerColliders)
         {
-            Debug.LogWarning($"[ShotCounterManager] No trigger colliders assigned on {gameObject.name}. Shot counting will not work!", this);
-        }
-        else
-        {
-            // Ensure all assigned colliders are triggers
-            foreach (Collider col in triggerColliders)
+            if (!col.isTrigger)
             {
-                if (col != null && !col.isTrigger)
-                {
-                    Debug.LogWarning($"[ShotCounterManager] Collider {col.gameObject.name} is not set as a trigger. Setting it now.", this);
-                    col.isTrigger = true;
-                }
-            }
-        }
-
-        // Auto-find PlayAreaManager if not assigned
-        if (playAreaManager == null)
-        {
-            playAreaManager = GetComponentInParent<PlayAreaManager>();
-        }
-        
-        // Auto-find HoopPositionsManager if not assigned
-        if (hoopPositionsManager == null)
-        {
-            hoopPositionsManager = GetComponentInParent<HoopPositionsManager>();
-            if (hoopPositionsManager == null && playAreaManager != null)
-            {
-                hoopPositionsManager = playAreaManager.GetComponentInChildren<HoopPositionsManager>();
+                col.isTrigger = true;
             }
         }
     }
@@ -71,27 +49,18 @@ public class ShotCounterManager : MonoBehaviour
     private void Start()
     {
         // Automatically add trigger forwarder components to each collider if they don't have one
-        if (triggerColliders != null)
+        foreach (Collider col in triggerColliders)
         {
-            foreach (Collider col in triggerColliders)
+            // Ensure the collider is a trigger
+            if (!col.isTrigger)
             {
-                if (col != null)
-                {
-                    // Ensure the collider is a trigger
-                    if (!col.isTrigger)
-                    {
-                        col.isTrigger = true;
-                    }
-                    
-                    // Add or get the forwarder component
-                    ShotCounterTriggerForwarder forwarder = col.GetComponent<ShotCounterTriggerForwarder>();
-                    if (forwarder == null)
-                    {
-                        forwarder = col.gameObject.AddComponent<ShotCounterTriggerForwarder>();
-                    }
-                    forwarder.SetManager(this);
-                }
+                col.isTrigger = true;
             }
+            
+            // Add or get the forwarder component
+            ShotCounterTriggerForwarder forwarder = col.GetComponent<ShotCounterTriggerForwarder>();
+            forwarder = col.gameObject.AddComponent<ShotCounterTriggerForwarder>();
+            forwarder.SetManager(this);
         }
     }
 
@@ -101,27 +70,20 @@ public class ShotCounterManager : MonoBehaviour
     /// </summary>
     public void OnTriggerEntered(Collider other)
     {
-        Debug.Log($"[ShotCounterManager] OnTriggerEntered called with: {other.gameObject.name} (Tag: {other.tag})", this);
-        
         // Check if the colliding object itself has the tag
         if (other.CompareTag(ballTag))
         {
-            Debug.Log($"[ShotCounterManager] Found ball directly: {other.gameObject.name}", this);
             RegisterShot(other.gameObject);
             return;
         }
-
-        // Check if parent has the tag
-        GameObject ballRoot = FindBallRoot(other.gameObject);
         
-        if (ballRoot == null)
+        // If not, search up the hierarchy for the ball root
+        GameObject ballRoot = FindBallRoot(other.gameObject);
+        if (ballRoot != null)
         {
-            Debug.Log($"[ShotCounterManager] Could not find ball root for {other.gameObject.name}", this);
+            RegisterShot(ballRoot);
             return;
         }
-
-        Debug.Log($"[ShotCounterManager] Found ball root: {ballRoot.name}", this);
-        RegisterShot(ballRoot);
     }
 
     /// <summary>
@@ -146,7 +108,6 @@ public class ShotCounterManager : MonoBehaviour
         // Check if this ball has already been counted
         if (m_CountedBalls.Contains(ball))
         {
-            Debug.Log($"[ShotCounterManager] Ball {ball.name} already counted, ignoring.", this);
             return; // Already counted, ignore
         }
 
@@ -157,17 +118,7 @@ public class ShotCounterManager : MonoBehaviour
         bool isMoneyBall = IsMoneyBall(ball);
         
         // Increment the shot counter in PlayAreaManager (never resets)
-        int currentShotCount = 0;
-        if (playAreaManager != null)
-        {
-            currentShotCount = playAreaManager.IncrementShotCount();
-        }
-        else
-        {
-            Debug.LogWarning($"[ShotCounterManager] PlayAreaManager not found! Shot counter will not work correctly.", this);
-        }
-        
-        Debug.Log($"[ShotCounterManager] Shot registered! Ball: {ball.name}, Shot count: {currentShotCount}, Is money ball: {isMoneyBall}", this);
+        int currentShotCount = playAreaManager.IncrementShotCount();
         
         // Dispatch ShotRegistered event
         ShotRegistered?.Invoke(ball);
@@ -175,44 +126,22 @@ public class ShotCounterManager : MonoBehaviour
         // Check if a life should be lost
         // Life is lost if: ball did NOT score AND ball did NOT hit the rim
         BallStateTracker tracker = ball.GetComponent<BallStateTracker>();
-        bool ballScored = tracker != null && tracker.HasScored();
-        
-        // Find ScoreManager (used for both miss registration and life loss)
-        ScoreManager scoreManager = ScoreManager.FindScoreManagerFor(gameObject);
+        bool ballScored = tracker.HasScored();
         
         // Register a miss if the ball didn't score (resets consecutive scores counter)
         // This should happen for ALL missed shots, regardless of whether a life is lost
         if (!ballScored)
         {
-            if (scoreManager != null)
-            {
-                scoreManager.RegisterMiss();
-                Debug.Log($"[ShotCounterManager] Shot missed! Registered miss with ScoreManager. Ball: {ball.name}", this);
-            }
-            else
-            {
-                Debug.LogWarning($"[ShotCounterManager] Could not find ScoreManager for {gameObject.name}. Miss will not be registered.", this);
-            }
+            scoreManager.RegisterMiss();
         }
         
         // VFX is now managed by OnFireVFXTrigger based on fire state - don't stop it here
         // The VFX will automatically stop when fire state is deactivated
         
         // Check if a life should be lost (complete miss: no score AND no rim hit)
-        if (tracker != null && tracker.ShouldLoseLife())
+        if (tracker.ShouldLoseLife())
         {
-            if (scoreManager != null)
-            {
-                scoreManager.LoseLife();
-            }
-            else
-            {
-                Debug.LogWarning($"[ShotCounterManager] Could not find ScoreManager for {gameObject.name}. Life will not be lost.", this);
-            }
-        }
-        else if (tracker == null)
-        {
-            Debug.LogWarning($"[ShotCounterManager] Ball {ball.name} does not have BallStateTracker component. Cannot determine if life should be lost.", this);
+            scoreManager.LoseLife();
         }
         
         // Disable collider on the ball after a delay to prevent further collisions
@@ -223,24 +152,15 @@ public class ShotCounterManager : MonoBehaviour
         StartCoroutine(DestroyBallAfterDelay(ball, 3f));
         
         // If this is a money ball, notify PlayAreaManager (it will move the hoop and unblock spawning)
-        if (isMoneyBall && playAreaManager != null)
+        if (isMoneyBall)
         {
             playAreaManager.OnMoneyBallShotRegistered();
         }
         // Otherwise, check if we should move the hoop (every 3rd shot, but not for money balls since they handle it)
         else if (currentShotCount % 3 == 0)
         {
-            Debug.Log($"[ShotCounterManager] Shot count reached multiple of 3! Moving hoop to next position.", this);
-            
             // Notify HoopPositionsManager to move to next position
-            if (hoopPositionsManager != null)
-            {
-                hoopPositionsManager.MoveToNextPosition();
-            }
-            else
-            {
-                Debug.LogWarning("[ShotCounterManager] Cannot move hoop - HoopPositionsManager not found!", this);
-            }
+            hoopPositionsManager.MoveToNextPosition();
         }
     }
     
@@ -250,11 +170,7 @@ public class ShotCounterManager : MonoBehaviour
     private bool IsMoneyBall(GameObject ball)
     {
         BasketballVisualController visualController = ball.GetComponent<BasketballVisualController>();
-        if (visualController != null)
-        {
-            return visualController.IsMoneyBall();
-        }
-        return false;
+        return visualController.IsMoneyBall();
     }
 
     /// <summary>
@@ -264,31 +180,26 @@ public class ShotCounterManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         
-        if (ball != null)
-        {
+        if (ball != null) {
             Collider[] ballColliders = ball.GetComponentsInChildren<Collider>();
             foreach (Collider col in ballColliders)
             {
-                col.enabled = false;
+                if (col != null) { col.enabled = false; }
             }
-            Debug.Log($"[ShotCounterManager] Disabled all colliders on ball {ball.name} after {delay} second delay.", this);
         }
+        
     }
     
     private System.Collections.IEnumerator DestroyBallAfterDelay(GameObject ball, float delay)
     {
         yield return new WaitForSeconds(delay);
         
-        if (ball != null)
-        {
-            // VFX cleanup is handled automatically by OnFireVFXTrigger when fire state changes
-            // No need to manually stop VFX here
-            
-            // Remove from counted set before destroying
-            m_CountedBalls.Remove(ball);
-            Destroy(ball);
-            Debug.Log($"[ShotCounterManager] Destroyed ball {ball.name} after {delay} seconds.", this);
-        }
+        // VFX cleanup is handled automatically by OnFireVFXTrigger when fire state changes
+        // No need to manually stop VFX here
+        
+        // Remove from counted set before destroying
+        m_CountedBalls.Remove(ball);
+        Destroy(ball);
     }
 
     /// <summary>
@@ -305,14 +216,9 @@ public class ShotCounterManager : MonoBehaviour
     /// </summary>
     public int GetCurrentShotCount()
     {
-        if (playAreaManager != null)
-        {
-            return playAreaManager.GetShotCount();
-        }
-        return 0;
+        return playAreaManager.GetShotCount();
     }
 
     // Removed StopAllVFXOnBall method - VFX is now managed entirely by OnFireVFXTrigger
     // based on the fire state. The VFX will automatically start/stop when fire state changes.
 }
-

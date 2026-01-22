@@ -7,11 +7,9 @@ using UnityEngine;
 public class StartGameManager : MonoBehaviour
 {
     [Header("Canvas Reference")]
-    [Tooltip("Reference to the StartGameCanvas GameObject. If not assigned, will search for child named 'StartGameCanvas'.")]
     [SerializeField] private GameObject startGameCanvas;
 
     [Header("PlayArea Reference")]
-    [Tooltip("Reference to the PlayAreaManager. If not assigned, will search for it in parent hierarchy.")]
     [SerializeField] private PlayAreaManager playAreaManager;
 
     [Header("Distance Settings")]
@@ -22,9 +20,6 @@ public class StartGameManager : MonoBehaviour
     [Tooltip("Tag that identifies the player (XR Origin).")]
     [SerializeField] private string playerTag = "Player";
 
-    [Header("Debug")]
-    [Tooltip("Enable to see detailed logging.")]
-    [SerializeField] private bool debugLogs = false;
 
     private Transform m_PlayerRoot; // XR Origin transform
     private bool m_WasCanvasVisible = false;
@@ -32,139 +27,49 @@ public class StartGameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Find StartGameCanvas if not assigned
-        if (startGameCanvas == null)
-        {
-            // Search in children
-            Transform canvasTransform = transform.Find("StartGameCanvas");
-            if (canvasTransform != null)
-            {
-                startGameCanvas = canvasTransform.gameObject;
-                if (debugLogs)
-                    Debug.Log($"[StartGameManager] Found StartGameCanvas as child: {startGameCanvas.name}", this);
-            }
-            else
-            {
-                Debug.LogError($"[StartGameManager] StartGameCanvas not found! Please assign it in the inspector or ensure it's a child named 'StartGameCanvas'.", this);
-            }
-        }
-
         // Initially hide the canvas
-        if (startGameCanvas != null)
-        {
-            startGameCanvas.SetActive(false);
-            m_WasCanvasVisible = false;
-        }
-
-        // Find PlayAreaManager if not assigned
-        if (playAreaManager == null)
-        {
-            playAreaManager = GetComponentInParent<PlayAreaManager>();
-            if (debugLogs && playAreaManager != null)
-                Debug.Log($"[StartGameManager] Found PlayAreaManager: {playAreaManager.gameObject.name}", this);
-        }
+        startGameCanvas.SetActive(false);
+        m_WasCanvasVisible = false;
 
         // Subscribe to game state changes
-        if (playAreaManager != null)
-        {
-            playAreaManager.GameStateChanged += OnGameStateChanged;
-            if (debugLogs)
-                Debug.Log("[StartGameManager] Subscribed to PlayAreaManager.GameStateChanged event", this);
-        }
-        else
-        {
-            Debug.LogWarning("[StartGameManager] PlayAreaManager not found! Cannot subscribe to game state changes.", this);
-        }
-
-        // Find player root and main camera
-        FindPlayerRoot();
-        FindMainCamera();
+        playAreaManager.GameStateChanged += OnGameStateChanged;
     }
 
     private void Update()
     {
-        // Don't do anything if canvas reference is missing
-        if (startGameCanvas == null)
-            return;
-
-        // Check if player exists
-        if (m_PlayerRoot == null)
-        {
-            // Try to find player again (in case they spawned after Awake)
-            FindPlayerRoot();
-            if (m_PlayerRoot == null)
-            {
-                // Still no player, hide canvas
-                if (m_WasCanvasVisible)
-                {
-                    SetCanvasVisible(false);
-                }
-                return;
-            }
-        }
-
         // Check if play area is occupied or game is playing - hide canvas in these cases
-        if (playAreaManager != null)
+        bool isGamePlaying = playAreaManager.GetGameState() == PlayAreaManager.GameState.Playing;
+        bool isPlayAreaOccupied = !playAreaManager.IsAvailable(); // Play area is occupied if not available
+        
+        if (isGamePlaying || isPlayAreaOccupied)
         {
-            bool isGamePlaying = playAreaManager.GetGameState() == PlayAreaManager.GameState.Playing;
-#if NORMCORE
-            bool isPlayAreaOccupied = !playAreaManager.IsAvailable(); // Play area is occupied if not available
-#else
-            bool isPlayAreaOccupied = false; // Without NORMCORE, assume not occupied (single player)
-#endif
-            
-            if (isGamePlaying || isPlayAreaOccupied)
+            // Game is playing or play area is occupied, ensure canvas is hidden
+            if (m_WasCanvasVisible)
             {
-                // Game is playing or play area is occupied, ensure canvas is hidden
-                if (m_WasCanvasVisible)
-                {
-                    SetCanvasVisible(false);
-                    
-                    if (debugLogs)
-                    {
-                        Debug.Log($"[StartGameManager] Hiding canvas - GamePlaying: {isGamePlaying}, PlayAreaOccupied: {isPlayAreaOccupied}", this);
-                    }
-                }
-                return;
+                SetCanvasVisible(false);
             }
+            return;
         }
 
         // Only show canvas if play area is in Pregame state and available (unoccupied)
         // This ensures all clients see the canvas correctly
-        bool canShowCanvas = true;
-        if (playAreaManager != null)
-        {
-            bool isPregame = playAreaManager.GetGameState() == PlayAreaManager.GameState.Pregame;
-#if NORMCORE
-            bool isAvailable = playAreaManager.IsAvailable();
-#else
-            bool isAvailable = true; // Without NORMCORE, assume always available (single player)
-#endif
-            canShowCanvas = isPregame && isAvailable;
-            
-            if (!canShowCanvas && debugLogs)
-            {
-                Debug.Log($"[StartGameManager] Cannot show canvas - IsPregame: {isPregame}, IsAvailable: {isAvailable}", this);
-            }
-        }
+        bool isPregame = playAreaManager.GetGameState() == PlayAreaManager.GameState.Pregame;
+        bool isAvailable = playAreaManager.IsAvailable();
+        bool canShowCanvas = isPregame && isAvailable;
 
         // Calculate distance from player to this GameObject
-        float distance = Vector3.Distance(transform.position, m_PlayerRoot.position);
+        if (GetPlayerRoot() == null) { return; }
+        float distance = Vector3.Distance(transform.position, GetPlayerRoot().position);
         bool shouldBeVisible = canShowCanvas && distance <= showDistance;
 
         // Only update if visibility state changed
         if (shouldBeVisible != m_WasCanvasVisible)
         {
             SetCanvasVisible(shouldBeVisible);
-            
-            if (debugLogs)
-            {
-                Debug.Log($"[StartGameManager] Player distance: {distance:F2} / {showDistance:F2}. Canvas visibility: {shouldBeVisible}", this);
-            }
         }
 
         // Rotate canvas towards camera when visible
-        if (shouldBeVisible && startGameCanvas != null && startGameCanvas.activeSelf)
+        if (shouldBeVisible && startGameCanvas.activeSelf)
         {
             RotateCanvasTowardsCamera();
         }
@@ -175,89 +80,43 @@ public class StartGameManager : MonoBehaviour
     /// </summary>
     private void SetCanvasVisible(bool visible)
     {
-        if (startGameCanvas != null)
-        {
-            startGameCanvas.SetActive(visible);
-            m_WasCanvasVisible = visible;
-        }
+        startGameCanvas.SetActive(visible);
+        m_WasCanvasVisible = visible;
     }
 
     /// <summary>
-    /// Finds the player root (XR Origin) in the scene.
+    /// Gets the player root transform. If not already cached, finds it by tag.
     /// </summary>
-    private void FindPlayerRoot()
+    private Transform GetPlayerRoot()
     {
-        // Try to find by tag
+        // Return cached value if valid
+        if (m_PlayerRoot != null)
+        {
+            return m_PlayerRoot;
+        }
+
+        // Find player by tag and return its transform directly
         GameObject player = GameObject.FindGameObjectWithTag(playerTag);
-        if (player != null)
-        {
-            m_PlayerRoot = FindXROriginRoot(player.transform);
-            if (debugLogs && m_PlayerRoot != null)
-                Debug.Log($"[StartGameManager] Found player by tag: {m_PlayerRoot.name}", this);
-            return;
-        }
+        m_PlayerRoot = player.transform;
 
-        // Try to find XR Origin component
-        var xrOrigin = FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
-        if (xrOrigin != null)
-        {
-            m_PlayerRoot = xrOrigin.transform;
-            if (debugLogs)
-                Debug.Log($"[StartGameManager] Found XR Origin: {m_PlayerRoot.name}", this);
-        }
-        else if (debugLogs)
-        {
-            Debug.LogWarning("[StartGameManager] Could not find player/XR Origin. Canvas will remain hidden.", this);
-        }
+        return m_PlayerRoot;
     }
 
     /// <summary>
-    /// Finds the XR Origin root transform.
+    /// Gets the main camera (VR headset camera). If not already cached, finds it from the player root.
     /// </summary>
-    private Transform FindXROriginRoot(Transform start)
+    private Camera GetMainCamera()
     {
-        Transform current = start;
-        while (current != null)
+        // Return cached value if valid
+        if (m_MainCamera != null)
         {
-            if (current.GetComponent<Unity.XR.CoreUtils.XROrigin>() != null)
-            {
-                return current;
-            }
-            current = current.parent;
-        }
-        return start; // Fallback to starting transform
-    }
-
-    /// <summary>
-    /// Finds the main camera (VR headset camera).
-    /// </summary>
-    private void FindMainCamera()
-    {
-        // Try to find main camera
-        m_MainCamera = Camera.main;
-        if (m_MainCamera == null)
-        {
-            // If no main camera tag, find the camera in the XR Origin
-            if (m_PlayerRoot != null)
-            {
-                m_MainCamera = m_PlayerRoot.GetComponentInChildren<Camera>();
-            }
-            
-            // Fallback: find any camera
-            if (m_MainCamera == null)
-            {
-                m_MainCamera = FindFirstObjectByType<Camera>();
-            }
+            return m_MainCamera;
         }
 
-        if (debugLogs && m_MainCamera != null)
-        {
-            Debug.Log($"[StartGameManager] Found main camera: {m_MainCamera.name}", this);
-        }
-        else if (debugLogs)
-        {
-            Debug.LogWarning("[StartGameManager] Could not find main camera. Canvas will not rotate towards camera.", this);
-        }
+        // Find camera in the XR Origin (player root)
+        m_MainCamera = GetPlayerRoot().GetComponentInChildren<Camera>();
+
+        return m_MainCamera;
     }
 
     /// <summary>
@@ -265,20 +124,10 @@ public class StartGameManager : MonoBehaviour
     /// </summary>
     private void RotateCanvasTowardsCamera()
     {
-        if (startGameCanvas == null || m_MainCamera == null)
-        {
-            // Try to find camera again if missing
-            if (m_MainCamera == null)
-            {
-                FindMainCamera();
-            }
-            return;
-        }
-
         Transform canvasTransform = startGameCanvas.transform;
         
         // Calculate direction from canvas to camera
-        Vector3 directionToCamera = m_MainCamera.transform.position - canvasTransform.position;
+        Vector3 directionToCamera = GetMainCamera().transform.position - canvasTransform.position;
         
         // Only rotate on Y axis (horizontal rotation) for billboard effect
         // This prevents the canvas from tilting up/down with the camera
@@ -302,30 +151,17 @@ public class StartGameManager : MonoBehaviour
         if (playAreaManager == null)
             return;
 
-#if NORMCORE
         bool isAvailable = playAreaManager.IsAvailable();
-#else
-        bool isAvailable = true; // Without NORMCORE, assume always available (single player)
-#endif
         
         if (newState == PlayAreaManager.GameState.Playing || !isAvailable)
         {
             // Hide canvas when game starts or play area becomes occupied
             SetCanvasVisible(false);
-            
-            if (debugLogs)
-            {
-                Debug.Log($"[StartGameManager] Hiding canvas - State: {newState}, IsAvailable: {isAvailable}", this);
-            }
         }
         else if (newState == PlayAreaManager.GameState.Pregame && isAvailable)
         {
             // Show canvas again when game returns to Pregame and play area is unoccupied
             // The Update() method will handle distance-based visibility
-            if (debugLogs)
-            {
-                Debug.Log($"[StartGameManager] Play area is now Pregame and available. Canvas visibility will be controlled by distance check.", this);
-            }
             // Don't force show here - let the distance check in Update() handle it
             // This ensures it only shows when player is within range
         }
@@ -334,12 +170,7 @@ public class StartGameManager : MonoBehaviour
     private void OnDestroy()
     {
         // Unsubscribe from event to prevent memory leaks
-        if (playAreaManager != null)
-        {
-            playAreaManager.GameStateChanged -= OnGameStateChanged;
-            if (debugLogs)
-                Debug.Log("[StartGameManager] Unsubscribed from PlayAreaManager.GameStateChanged event", this);
-        }
+        playAreaManager.GameStateChanged -= OnGameStateChanged;
     }
 
     private void OnDrawGizmosSelected()

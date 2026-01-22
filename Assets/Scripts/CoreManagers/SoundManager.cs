@@ -121,16 +121,8 @@ public class SoundManager : MonoBehaviour
     {
         get
         {
-            if (s_Instance == null)
-            {
-                // Try to find existing instance in scene
-                s_Instance = FindFirstObjectByType<SoundManager>();
-                
-                if (s_Instance == null)
-                {
-                    Debug.LogWarning("[SoundManager] No SoundManager instance found in scene! Please add a GameObject named 'SoundManager' with the SoundManager component.");
-                }
-            }
+            // Try to find existing instance in scene
+            s_Instance = FindFirstObjectByType<SoundManager>();
             return s_Instance;
         }
     }
@@ -138,16 +130,7 @@ public class SoundManager : MonoBehaviour
     private void Awake()
     {
         // Ensure singleton pattern
-        if (s_Instance == null)
-        {
-            s_Instance = this;
-        }
-        else if (s_Instance != this)
-        {
-            Debug.LogWarning("[SoundManager] Multiple SoundManager instances found! Destroying duplicate.", this);
-            Destroy(this);
-            return;
-        }
+        s_Instance = this;
         
         // Setup background music AudioSource
         SetupBackgroundMusic();
@@ -156,10 +139,7 @@ public class SoundManager : MonoBehaviour
     private void Start()
     {
         // Randomly select a track when joining and start playing
-        if (backgroundMusicTracks != null && backgroundMusicTracks.Length > 0)
-        {
-            InitializeMusicWithRandomTrack();
-        }
+        InitializeMusicWithRandomTrack();
     }
     
     /// <summary>
@@ -167,62 +147,43 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     private void InitializeMusicWithRandomTrack()
     {
-        if (backgroundMusicTracks == null || backgroundMusicTracks.Length == 0)
-        {
-            Debug.LogWarning("[SoundManager] No background music tracks assigned!", this);
-            return;
-        }
-        
         // Count valid tracks
         int validTrackCount = 0;
         foreach (var track in backgroundMusicTracks)
         {
-            if (track != null) validTrackCount++;
-        }
-        
-        if (validTrackCount == 0)
-        {
-            Debug.LogWarning("[SoundManager] No valid music tracks found!", this);
-            return;
+            validTrackCount++;
         }
         
         // Randomly select a valid track
         int randomIndex = Random.Range(0, backgroundMusicTracks.Length);
         int attempts = 0;
-        while (backgroundMusicTracks[randomIndex] == null && attempts < backgroundMusicTracks.Length)
+        while (attempts < backgroundMusicTracks.Length)
         {
             randomIndex = (randomIndex + 1) % backgroundMusicTracks.Length;
             attempts++;
         }
         
-        if (backgroundMusicTracks[randomIndex] != null)
-        {
-            m_CurrentTrackIndex = randomIndex;
-            PlayBackgroundMusic();
-            Debug.Log($"[SoundManager] Randomly selected and started playing track {randomIndex + 1}/{backgroundMusicTracks.Length}: {backgroundMusicTracks[randomIndex].name}", this);
-        }
+        m_CurrentTrackIndex = randomIndex;
+        PlayBackgroundMusic();
     }
 
     private void Update()
     {
         // Check if current track has finished and play next one
-        if (m_BackgroundMusicSource != null && backgroundMusicTracks != null && backgroundMusicTracks.Length > 1)
+        if (backgroundMusicTracks.Length > 1)
         {
             // If not playing and we have tracks, start the next one
-            if (!m_BackgroundMusicSource.isPlaying && backgroundMusicTracks[m_CurrentTrackIndex] != null)
+            if (!m_BackgroundMusicSource.isPlaying)
             {
                 PlayNextTrack();
             }
         }
         
         // Update spatial settings if they changed in the Inspector (for runtime editing)
-        if (m_BackgroundMusicSource != null)
+        float expectedSpatialBlend = useSpatialAudioForMusic ? 1.0f : 0.0f;
+        if (Mathf.Abs(m_BackgroundMusicSource.spatialBlend - expectedSpatialBlend) > 0.01f)
         {
-            float expectedSpatialBlend = useSpatialAudioForMusic ? 1.0f : 0.0f;
-            if (Mathf.Abs(m_BackgroundMusicSource.spatialBlend - expectedSpatialBlend) > 0.01f)
-            {
-                UpdateMusicSpatialSettings();
-            }
+            UpdateMusicSpatialSettings();
         }
     }
 
@@ -254,8 +215,6 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     private void UpdateMusicSpatialSettings()
     {
-        if (m_BackgroundMusicSource == null)
-            return;
 
         if (useSpatialAudioForMusic)
         {
@@ -282,18 +241,6 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public void PlayBackgroundMusic()
     {
-        if (backgroundMusicTracks == null || backgroundMusicTracks.Length == 0)
-        {
-            Debug.LogWarning("[SoundManager] No background music tracks assigned!", this);
-            return;
-        }
-
-        if (m_BackgroundMusicSource == null)
-        {
-            Debug.LogWarning("[SoundManager] Background music AudioSource not initialized!", this);
-            return;
-        }
-
         // If already playing, don't restart
         if (m_BackgroundMusicSource.isPlaying)
         {
@@ -301,20 +248,17 @@ public class SoundManager : MonoBehaviour
         }
 
         // Find the first valid track if current one is null
-        if (m_CurrentTrackIndex < 0 || m_CurrentTrackIndex >= backgroundMusicTracks.Length || backgroundMusicTracks[m_CurrentTrackIndex] == null)
+        if (m_CurrentTrackIndex < 0 || m_CurrentTrackIndex >= backgroundMusicTracks.Length)
         {
             for (int i = 0; i < backgroundMusicTracks.Length; i++)
             {
-                if (backgroundMusicTracks[i] != null)
-                {
-                    m_CurrentTrackIndex = i;
-                    break;
-                }
+                m_CurrentTrackIndex = i;
+                break;
             }
         }
 
         // Play the current track
-        if (m_CurrentTrackIndex >= 0 && m_CurrentTrackIndex < backgroundMusicTracks.Length && backgroundMusicTracks[m_CurrentTrackIndex] != null)
+        if (m_CurrentTrackIndex >= 0 && m_CurrentTrackIndex < backgroundMusicTracks.Length)
         {
             m_BackgroundMusicSource.clip = backgroundMusicTracks[m_CurrentTrackIndex];
             m_BackgroundMusicSource.volume = backgroundMusicVolume;
@@ -328,30 +272,21 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     private void PlayNextTrack()
     {
-        if (backgroundMusicTracks == null || backgroundMusicTracks.Length == 0 || m_BackgroundMusicSource == null)
-        {
-            return;
-        }
-
         // Move to next track index, cycling back to 0
         m_CurrentTrackIndex = (m_CurrentTrackIndex + 1) % backgroundMusicTracks.Length;
 
         // Find next valid track if current one is null
         int attempts = 0;
-        while (backgroundMusicTracks[m_CurrentTrackIndex] == null && attempts < backgroundMusicTracks.Length)
+        while (attempts < backgroundMusicTracks.Length)
         {
             m_CurrentTrackIndex = (m_CurrentTrackIndex + 1) % backgroundMusicTracks.Length;
             attempts++;
         }
 
-        // Play the track if valid
-        if (backgroundMusicTracks[m_CurrentTrackIndex] != null)
-        {
-            m_BackgroundMusicSource.clip = backgroundMusicTracks[m_CurrentTrackIndex];
-            m_BackgroundMusicSource.volume = backgroundMusicVolume;
-            m_BackgroundMusicSource.Play();
-            Debug.Log($"[SoundManager] Playing next background music track {m_CurrentTrackIndex + 1}/{backgroundMusicTracks.Length}: {backgroundMusicTracks[m_CurrentTrackIndex].name}", this);
-        }
+        // Play the track
+        m_BackgroundMusicSource.clip = backgroundMusicTracks[m_CurrentTrackIndex];
+        m_BackgroundMusicSource.volume = backgroundMusicVolume;
+        m_BackgroundMusicSource.Play();
     }
 
     /// <summary>
@@ -359,10 +294,9 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public void StopBackgroundMusic()
     {
-        if (m_BackgroundMusicSource != null && m_BackgroundMusicSource.isPlaying)
+        if (m_BackgroundMusicSource.isPlaying)
         {
             m_BackgroundMusicSource.Stop();
-            Debug.Log("[SoundManager] Stopped background music.", this);
         }
     }
 
@@ -372,10 +306,7 @@ public class SoundManager : MonoBehaviour
     public void SetBackgroundMusicVolume(float volume)
     {
         backgroundMusicVolume = Mathf.Clamp01(volume);
-        if (m_BackgroundMusicSource != null)
-        {
-            m_BackgroundMusicSource.volume = backgroundMusicVolume;
-        }
+        m_BackgroundMusicSource.volume = backgroundMusicVolume;
     }
 
     /// <summary>
@@ -383,7 +314,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public void SkipToNextTrack()
     {
-        if (m_BackgroundMusicSource != null && m_BackgroundMusicSource.isPlaying)
+        if (m_BackgroundMusicSource.isPlaying)
         {
             m_BackgroundMusicSource.Stop();
         }
@@ -397,22 +328,21 @@ public class SoundManager : MonoBehaviour
     /// <returns>True if the position is within a local client's PlayArea, false otherwise.</returns>
     private static bool IsPositionInLocalPlayArea(Vector3 position)
     {
-        if (Instance == null)
-            return false;
+        // Auto-finding is disabled. PlayAreas should be assigned via reference.
+        // For now, return false as we cannot find PlayAreas without assignment
+        return false;
         
-        // Find all PlayAreaManagers in the scene
-        PlayAreaManager[] allPlayAreas = FindObjectsByType<PlayAreaManager>(FindObjectsSortMode.None);
+        // Original auto-finding code removed - requires assignment
+        /* PlayAreaManager[] allPlayAreas = FindObjectsByType<PlayAreaManager>(FindObjectsSortMode.None);
         
         foreach (PlayAreaManager playArea in allPlayAreas)
         {
             if (playArea == null)
                 continue;
             
-#if NORMCORE
             // Check if this PlayArea is owned by the local client
             if (!playArea.IsOwnedByLocalClient())
                 continue;
-#endif
             
             // Check if the position is within this PlayArea's bounds
             // We'll use a simple distance check from the PlayArea's center
@@ -426,8 +356,8 @@ public class SoundManager : MonoBehaviour
                 return true;
             }
         }
-        
-        return false;
+
+        return false; */
     }
     
     /// <summary>
@@ -438,9 +368,6 @@ public class SoundManager : MonoBehaviour
     /// <returns>The effective volume (0 if muted, otherwise the requested volume).</returns>
     public static float GetEffectiveVolume(Vector3 position, float requestedVolume)
     {
-        if (Instance == null)
-            return requestedVolume;
-        
         // If mute in play area is enabled and position is in local play area, mute the sound
         if (Instance.muteInPlayArea && IsPositionInLocalPlayArea(position))
         {
@@ -459,11 +386,6 @@ public class SoundManager : MonoBehaviour
     /// <param name="volume">The volume to play the sound at.</param>
     public static void PlayClipAtPoint3D(AudioClip clip, Vector3 position, float volume)
     {
-        if (clip == null)
-        {
-            Debug.LogWarning($"[SoundManager] Attempted to play a null audio clip at {position}.", Instance);
-            return;
-        }
 
         // Check if sound should be muted
         float effectiveVolume = GetEffectiveVolume(position, volume);
@@ -501,7 +423,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetBallShot()
     {
-        return Instance != null ? Instance.ballShot : null;
+        return Instance.ballShot;
     }
 
     /// <summary>
@@ -509,7 +431,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetBallShotVolume()
     {
-        return Instance != null ? Instance.ballShotVolume : 1.0f;
+        return Instance.ballShotVolume;
     }
 
     /// <summary>
@@ -517,7 +439,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetBallBounce()
     {
-        return Instance != null ? Instance.ballBounce : null;
+        return Instance.ballBounce;
     }
 
     /// <summary>
@@ -525,7 +447,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetBallBounceVolume()
     {
-        return Instance != null ? Instance.ballBounceVolume : 1.0f;
+        return Instance.ballBounceVolume;
     }
 
     /// <summary>
@@ -533,7 +455,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetBallMachine()
     {
-        return Instance != null ? Instance.ballMachine : null;
+        return Instance.ballMachine;
     }
 
     /// <summary>
@@ -541,7 +463,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetBallMachineVolume()
     {
-        return Instance != null ? Instance.ballMachineVolume : 1.0f;
+        return Instance.ballMachineVolume;
     }
 
     /// <summary>
@@ -549,7 +471,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetSwish()
     {
-        return Instance != null ? Instance.swish : null;
+        return Instance.swish;
     }
 
     /// <summary>
@@ -557,7 +479,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetSwishVolume()
     {
-        return Instance != null ? Instance.swishVolume : 1.0f;
+        return Instance.swishVolume;
     }
 
     /// <summary>
@@ -565,7 +487,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetRimHit()
     {
-        return Instance != null ? Instance.rimHit : null;
+        return Instance.rimHit;
     }
 
     /// <summary>
@@ -573,7 +495,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetRimHitVolume()
     {
-        return Instance != null ? Instance.rimHitVolume : 1.0f;
+        return Instance.rimHitVolume;
     }
 
     /// <summary>
@@ -581,7 +503,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetBackboardHit()
     {
-        return Instance != null ? Instance.backboardHit : null;
+        return Instance.backboardHit;
     }
 
     /// <summary>
@@ -589,7 +511,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetBackboardHitVolume()
     {
-        return Instance != null ? Instance.backboardHitVolume : 1.0f;
+        return Instance.backboardHitVolume;
     }
 
     /// <summary>
@@ -597,7 +519,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetWallHit()
     {
-        return Instance != null ? Instance.wallHit : null;
+        return Instance.wallHit;
     }
 
     /// <summary>
@@ -605,7 +527,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetWallHitVolume()
     {
-        return Instance != null ? Instance.wallHitVolume : 1.0f;
+        return Instance.wallHitVolume;
     }
 
     /// <summary>
@@ -613,7 +535,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetGameOver()
     {
-        return Instance != null ? Instance.gameOver : null;
+        return Instance.gameOver;
     }
 
     /// <summary>
@@ -621,7 +543,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetGameOverVolume()
     {
-        return Instance != null ? Instance.gameOverVolume : 1.0f;
+        return Instance.gameOverVolume;
     }
 
     /// <summary>
@@ -629,7 +551,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetLoseLife()
     {
-        return Instance != null ? Instance.loseLife : null;
+        return Instance.loseLife;
     }
 
     /// <summary>
@@ -637,7 +559,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetLoseLifeVolume()
     {
-        return Instance != null ? Instance.loseLifeVolume : 1.0f;
+        return Instance.loseLifeVolume;
     }
 
     /// <summary>
@@ -645,7 +567,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetGainLife()
     {
-        return Instance != null ? Instance.gainLife : null;
+        return Instance.gainLife;
     }
 
     /// <summary>
@@ -653,7 +575,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetGainLifeVolume()
     {
-        return Instance != null ? Instance.gainLifeVolume : 1.0f;
+        return Instance.gainLifeVolume;
     }
 
     /// <summary>
@@ -661,7 +583,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetRimFireActivate()
     {
-        return Instance != null ? Instance.rimFireActivate : null;
+        return Instance.rimFireActivate;
     }
 
     /// <summary>
@@ -669,7 +591,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetRimFireActivateVolume()
     {
-        return Instance != null ? Instance.rimFireActivateVolume : 1.0f;
+        return Instance.rimFireActivateVolume;
     }
 
     /// <summary>
@@ -677,7 +599,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static AudioClip GetBallFireLoop()
     {
-        return Instance != null ? Instance.ballFireLoop : null;
+        return Instance.ballFireLoop;
     }
 
     /// <summary>
@@ -685,7 +607,7 @@ public class SoundManager : MonoBehaviour
     /// </summary>
     public static float GetBallFireLoopVolume()
     {
-        return Instance != null ? Instance.ballFireLoopVolume : 1.0f;
+        return Instance.ballFireLoopVolume;
     }
 }
 
